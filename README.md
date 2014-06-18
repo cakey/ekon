@@ -68,3 +68,8 @@ Every turn God iterates over the list of agents, calling them with the world sta
         'sells':  [('bronze', 100), ('wood', 200)],
         'move':   2,
     }
+
+
+### TODO
+
+* Pass location of other players?
