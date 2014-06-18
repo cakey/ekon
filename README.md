@@ -10,6 +10,7 @@ Every turn God iterates over the list of agents, calling them with the world sta
     {
         'you': {
             'position': 2,
+            'coin': 2000,
             'resources': {
                 'bronze': 40,
                 'gold' : 800,

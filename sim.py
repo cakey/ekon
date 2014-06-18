@@ -43,9 +43,23 @@ def run_sim():
     world_agents = [{
             "name":name,
             "func":func,
-            "coin": 1000,
-            "location": random.choice(world_graph.keys())
+            "coin": traveller_start_gold,
+            "position": random.choice(world_graph.keys()),
+            "resources": {}
         } for name,func in agents.agents.iteritems()]
+
+    for round_number in range(num_rounds):
+        print round_number
+        for current_agent in world_agents:
+
+            state_to_pass = {
+                "you": current_agent,
+                "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
+            }
+
+            move = current_agent["func"](state_to_pass)
+
+            print current_agent["name"]
 
     print world_graph
     print world_shops

@@ -1,2 +1,2 @@
-def agent():
+def agent(*args, **kwargs):
   print "lol"
