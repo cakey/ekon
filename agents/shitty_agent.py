@@ -1,4 +1,4 @@
-def agent(*args, **kwargs):
+def agent(world_state, *args, **kwargs):
 
     my_position = world_state['you']['position']
     my_node = world_state['world'][my_position]
