@@ -1,5 +1,5 @@
-import shitty_agent
+import matt_shitty_agent
 
 agents = {
-  "shitty_agent": shitty_agent.agent
+  "matt_shitty_agent": matt_shitty_agent.agent
 }

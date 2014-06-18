@@ -13,8 +13,8 @@ def agent(world_state, *args, **kwargs):
 
     # Just fucking buy 100 of anything you can afford
     for resource, info in my_node['resources'].iteritems():
-        if info['quantity'] >= 100 and info['buy'] * 100 <= world_state['you']['coin']:
-            buys['resource'] = 100
+        if info['quantity'] >= 100 and info['sell'] * 100 <= world_state['you']['coin']:
+            buys[resource] = 100
 
     # Sell as many resources as you bought to try not to stockpile
     bought_resource_count = 100 * len(sells)
@@ -24,7 +24,7 @@ def agent(world_state, *args, **kwargs):
         # TODO
 
     return {
-        'buys':     buys,
-        'sells':    sells,
+        'buy':     sells,
+        'sell':    buys,
         'move': destination
     }

@@ -16,8 +16,8 @@ def build_graph(node_count):
 
 
 def run_sim():
-    num_rounds = 100
-    traveller_start_gold = 1000
+    num_rounds = 10
+    traveller_start_gold = 10000
     resource_price = [5,15]
     resource_count = 5
     node_count = 10
@@ -28,17 +28,17 @@ def run_sim():
             "GOLD": {
                 "buy": random.randint(10,100),
                 "sell": random.randint(10,100),
-                "quantity": random.randint(10,100)
+                "quantity": random.randint(10,1000)
             },
             "SILVER": {
                 "buy": random.randint(10,100),
                 "sell": random.randint(10,100),
-                "quantity": random.randint(10,100)
+                "quantity": random.randint(10,1000)
             },
             "NANOCHIPS": {
                 "buy": random.randint(10,100),
                 "sell": random.randint(10,100),
-                "quantity": random.randint(10,100)
+                "quantity": random.randint(10,1000)
             }
         } for name in world_graph.keys()}
 
@@ -72,29 +72,39 @@ def run_sim():
                 continue
 
             current_shop = world_shops[current_agent["position"]]
+            print "current_shop: %s" % current_shop
 
             # run agent sell commands
-            for resource_name, quantity in move.get("sell", {}).iteritems():
-                total_price = quantity * current_shop["resource_name"]["sell"]
-                if (quantity >= current_agent["resources"]["resource_name"]):
-                    current_shop["resource_name"]["quantity"] += quantity
+            for resource_name, quantity in move.get("buy", {}).iteritems():
+                if resource_name not in current_shop:
+                    print "BUY: shop does not have resource name %s " % resource_name
+                    continue
+                total_price = quantity * current_shop[resource_name]["buy"]
+                if (quantity <= current_agent["resources"].get(resource_name, 0)):
+                    current_shop[resource_name]["quantity"] += quantity
                     current_agent["resources"][resource_name] -= quantity
                     current_agent["coin"] += total_price
                 else:
                     print "SELL: insufficient quantity"
 
             # run agent buy commands
-            for resource_name, quantity in move.get("buy", {}).iteritems():
-                total_price = quantity * current_shop["resource_name"]["buy"]
-                if (quantity >= current_shop["resource_name"]["quantity"] and 
-                    current_agent["coin"] >= total_price):
-                    current_shop["resource_name"]["quantity"] -= quantity
-                    if resource_name not in current_agent["resources"]:
-                        current_agent["resources"][resource_name] = 0
-                    current_agent["resources"][resource_name] += quantity
-                    current_agent["coin"] -= total_price
+            for resource_name, quantity in move.get("sell", {}).iteritems():
+                if resource_name not in current_shop:
+                    print "BUY: shop does not have resource name %s " % resource_name
+                    continue
+                total_price = quantity * current_shop[resource_name]["sell"]
+                if quantity <= current_shop[resource_name]["quantity"]:
+
+                    if current_agent["coin"] >= total_price:
+                        current_shop[resource_name]["quantity"] -= quantity
+                        if resource_name not in current_agent["resources"]:
+                            current_agent["resources"][resource_name] = 0
+                        current_agent["resources"][resource_name] += quantity
+                        current_agent["coin"] -= total_price
+                    else:
+                        print "BUY: insufficient coin, resource: %s " % resource_name
                 else:
-                    print "BUY: insufficient funds or quantity in shop"
+                    print "BUY: insufficient quantity in shop, resource: %s " % resource_name
 
             # move agent
             if move.get("move", None) is not None:
