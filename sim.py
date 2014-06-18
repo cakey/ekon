@@ -51,9 +51,10 @@ def run_sim():
         } for name,func in agents.agents.iteritems()]
 
     for round_number in range(num_rounds):
-        print round_number
+        print "round number: %s" % round_number
+        print world_agents
         for current_agent in world_agents:
-
+            print "agent to play: %s" % current_agent["name"]
             state_to_pass = {
                 "you": {
                     "coin":current_agent["coin"],
@@ -64,6 +65,8 @@ def run_sim():
             }
 
             move = current_agent["func"](state_to_pass)
+            print move
+
             if not isinstance(move, dict):
                 print "move not dict"
                 continue
