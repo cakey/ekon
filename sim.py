@@ -52,7 +52,7 @@ def run_sim():
 
     for round_number in range(num_rounds):
         print "round number: %s" % round_number
-        print world_agents
+        print "world agents: %s" % world_agents
         for current_agent in world_agents:
             print "agent to play: %s" % current_agent["name"]
             state_to_pass = {
