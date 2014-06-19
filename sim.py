@@ -1,8 +1,11 @@
 import copy
+import logging
 import random
 
 import agents
 
+# Log everything, and send it to stderr.
+logging.basicConfig(level=logging.DEBUG)
 
 
 def build_graph(node_count):
@@ -62,7 +65,11 @@ def run_sim():
                 "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
             }
 
-            move = current_agent["func"](state_to_pass)
+            try:
+                move = current_agent["func"](state_to_pass)
+            except Exception as e:
+                print "Exception thrown by %s!" % current_agent['name']
+                logging.exception(e)
             print move
 
             if not isinstance(move, dict):
@@ -74,6 +81,9 @@ def run_sim():
 
             # run agent sell commands
             for resource_name, quantity in move.get("buy", {}).iteritems():
+                if quantity < 0:
+                    print "SELL: negative amount?"
+                    continue
                 if resource_name not in current_shop:
                     print "BUY: shop does not have resource name %s " % resource_name
                     continue
@@ -87,6 +97,9 @@ def run_sim():
 
             # run agent buy commands
             for resource_name, quantity in move.get("sell", {}).iteritems():
+                if quantity < 0:
+                    print "BUY: negative amount?"
+                    continue
                 if resource_name not in current_shop:
                     print "BUY: shop does not have resource name %s " % resource_name
                     continue
