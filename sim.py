@@ -74,6 +74,9 @@ def run_sim():
 
             # run agent sell commands
             for resource_name, quantity in move.get("buy", {}).iteritems():
+                if quantity < 0:
+                    print "SELL: negative amount?"
+                    continue
                 if resource_name not in current_shop:
                     print "BUY: shop does not have resource name %s " % resource_name
                     continue
@@ -87,6 +90,9 @@ def run_sim():
 
             # run agent buy commands
             for resource_name, quantity in move.get("sell", {}).iteritems():
+                if quantity < 0:
+                    print "BUY: negative amount?"
+                    continue
                 if resource_name not in current_shop:
                     print "BUY: shop does not have resource name %s " % resource_name
                     continue
