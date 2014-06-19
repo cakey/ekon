@@ -64,8 +64,8 @@ Every turn God iterates over the list of agents, calling them with the world sta
 ### Example message
 
     {
-        'buys':   [('gold', 1000), ('silver', 500)],
-        'sells':  [('bronze', 100), ('wood', 200)],
+        'buy':   {"gold": 1000, "silver": 200},
+        'sell':  {"wood": 300, "silver": 200},
         'move':   2,
     }
 
