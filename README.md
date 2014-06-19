@@ -69,6 +69,10 @@ Every turn God iterates over the list of agents, calling them with the world sta
         'move':   2,
     }
 
+### Winning
+
+Winner is the agent with the most coin at the end of the rounds.
+
 
 ### TODO
 

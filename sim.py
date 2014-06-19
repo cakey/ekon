@@ -114,11 +114,11 @@ def run_sim():
 
     # display winner
 
-    print world_graph
-    print world_shops
-    print world_agents
+    print "RESULTS!!! :"
 
-    print "everyone loses"
+    print sorted(
+        [(a["name"], a["coin"]) for a in world_agents],
+        key = lambda a: a[1], reverse=True)
 
 if __name__ == '__main__':
     run_sim()
