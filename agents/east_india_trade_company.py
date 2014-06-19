@@ -30,33 +30,36 @@ def agent(world_state, *args, **kwargs):
     for node_key, node in world_state['world'].items():
     	#Find the the node with the lowest gold sell price
         if 'GOLD' in node['resources']:
-            if node['resources']['GOLD']['sell'] > biggestGoldValue:
+            if node['resources']['GOLD']['buy'] > biggestGoldValue:
            	    biggestGoldValue = node['resources']['GOLD']['sell']
            	    biggestGoldNode = node_key   
 
 
-    #print lowestGoldValue
-    #print "Lowest " + str(lowestGoldNode)
-    #print biggestGoldValue
-    #print "Biggest " + str(biggestGoldNode)
+    #print "Lowest Node: " + str(lowestGoldNode) + " Value: " + str(lowestGoldValue) 
+    #print "Biggest Node: " + str(biggestGoldNode) + " Value: " + str(biggestGoldValue) 
 
     #Check if I have more than 1 gold
     if world_state['you']['resources'].get('GOLD', 0) > 0:
         #Check if I am on lowestGold Node
         if world_state['you']['position'] == biggestGoldNode:
             
-            #Sell all my gold
+            #print "On Expensive node selling!"
+
             sells['GOLD'] = world_state['you']['resources']['GOLD']
+
+
             # I move to the sell point
             destination = lowestGoldNode
         else:
             destination = biggestGoldNode	
     elif world_state['you']['position'] == lowestGoldNode:
+
+            #print "On cheap node buying!"
             
-            #Sell all my gold
             _max = (world_state['you']['coin']/(currentNode['resources']['GOLD']['sell']))
 
             buys['GOLD'] = min(_max, currentNode['resources']['GOLD']['quantity'])
+
             # I move to the sell point
             destination = biggestGoldNode
     else:
