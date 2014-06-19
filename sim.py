@@ -1,8 +1,11 @@
 import copy
+import logging
 import random
 
 import agents
 
+# Log everything, and send it to stderr.
+logging.basicConfig(level=logging.DEBUG)
 
 
 def build_graph(node_count):
@@ -62,7 +65,11 @@ def run_sim():
                 "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
             }
 
-            move = current_agent["func"](state_to_pass)
+            try:
+                move = current_agent["func"](state_to_pass)
+            except Exception as e:
+                print "Exception thrown by %s!" % current_agent['name']
+                logging.exception(e)
             print move
 
             if not isinstance(move, dict):
