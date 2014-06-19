@@ -32,27 +32,27 @@ Every turn God iterates over the list of agents, calling them with the world sta
                 'resources': {
                     'bronze': {
                         'quantity': 5000,
-                        'buy': 100
+                        'buy': 100,
                         'sell': 100
                     }
                 }
             }
             2: {
-                'neighbours': {1:1, 3: 1}
+                'neighbours': {1:1, 3:1}
                 'resources': {
                     'silver': {
                         'quantity': 5000,
-                        'buy': 100
+                        'buy': 100,
                         'sell': 100
                     }
                 }
             }
             3: {
-                'neighbours': {"A": 1, 1
+                'neighbours': {2: 1}
                 'resources': {
                     'wood': {
                         'quantity': 5000,
-                        'buy': 100
+                        'buy': 100,
                         'sell': 100
                     }
                 }
@@ -73,3 +73,5 @@ Every turn God iterates over the list of agents, calling them with the world sta
 ### TODO
 
 * Pass location of other players?
+* Regeneration of resources?
+* buy price should be < sell price

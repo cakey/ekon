@@ -16,31 +16,27 @@ def build_graph(node_count):
 
 
 def run_sim():
+
+    # setup games
+
     num_rounds = 10
     traveller_start_gold = 10000
-    resource_price = [5,15]
-    resource_count = 5
+    resource_prices = [5,15]
+    starting_quantity = [10,1000]
     node_count = 10
 
     world_graph = build_graph(node_count)
+
+    resource_names = ["GOLD", "SILVER", "NANOCHIPS"]
+
     world_shops = {
-        name: {
-            "GOLD": {
-                "buy": random.randint(10,100),
-                "sell": random.randint(10,100),
-                "quantity": random.randint(10,1000)
-            },
-            "SILVER": {
-                "buy": random.randint(10,100),
-                "sell": random.randint(10,100),
-                "quantity": random.randint(10,1000)
-            },
-            "NANOCHIPS": {
-                "buy": random.randint(10,100),
-                "sell": random.randint(10,100),
-                "quantity": random.randint(10,1000)
-            }
-        } for name in world_graph.keys()}
+        shop: {
+            resource: {
+                "buy": random.randint(*resource_prices),
+                "sell": random.randint(*resource_prices),
+                "quantity": random.randint(*starting_quantity)
+            } for resource in resource_names }
+        for shop in world_graph.keys()}
 
     world_agents = [{
             "name":name,
@@ -49,6 +45,8 @@ def run_sim():
             "position": random.choice(world_graph.keys()),
             "resources": {}
         } for name,func in agents.agents.iteritems()]
+
+    # run game
 
     for round_number in range(num_rounds):
         print "round number: %s" % round_number
@@ -113,6 +111,8 @@ def run_sim():
 
                 else:
                     print "INVALID LOCATION"
+
+    # display winner
 
     print world_graph
     print world_shops
