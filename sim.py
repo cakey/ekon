@@ -119,7 +119,8 @@ def run_sim():
 
             # move agent
             if move.get("move", None) is not None:
-                if move["move"] in world_graph[current_agent["position"]].keys():
+                if (move["move"] in world_graph[current_agent["position"]].keys() or
+                    move["move"] == current_agent["position"]):
                     current_agent["position"] = move["move"]
 
                 else:
