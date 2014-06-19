@@ -41,7 +41,7 @@ def agent(world_state, *args, **kwargs):
     #print "Biggest " + str(biggestGoldNode)
 
     #Check if I have more than 1 gold
-    if  'GOLD' in world_state['you']['resources']:
+    if world_state['you']['resources'].get('GOLD', 0) > 0:
         #Check if I am on lowestGold Node
         if world_state['you']['position'] == biggestGoldNode:
             
@@ -51,21 +51,16 @@ def agent(world_state, *args, **kwargs):
             destination = lowestGoldNode
         else:
             destination = biggestGoldNode	
-    else:
-        #Check if I am on lowestGold Node
-        if world_state['you']['position'] == lowestGoldNode:
+    elif world_state['you']['position'] == lowestGoldNode:
             
             #Sell all my gold
-            max = (world_state['you']['coin']/(currentNode['resources']['GOLD']['sell']))
+            _max = (world_state['you']['coin']/(currentNode['resources']['GOLD']['sell']))
 
-            if max > currentNode['resources']['GOLD']['quantity']:
-                max = currentNode['resources']['GOLD']['quantity']
-
-            buys['GOLD'] = max
+            buys['GOLD'] = min(_max, currentNode['resources']['GOLD']['quantity'])
             # I move to the sell point
             destination = biggestGoldNode
-        else:
-            destination = lowestGoldNode	
+    else:
+        destination = lowestGoldNode	
 
 
     #print destination

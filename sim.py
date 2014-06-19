@@ -22,7 +22,7 @@ def run_sim():
 
     # setup games
 
-    num_rounds = 10
+    num_rounds = 20
     traveller_start_gold = 10000
     resource_prices = [5,15]
     starting_quantity = [10,1000]

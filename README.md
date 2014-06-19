@@ -79,3 +79,5 @@ Winner is the agent with the most coin at the end of the rounds.
 * Pass location of other players?
 * Regeneration of resources?
 * buy price should be < sell price
+* pass through round number so can sell off at end
+* clean up logging
