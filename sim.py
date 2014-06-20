@@ -2,36 +2,12 @@ import copy
 import logging
 import random
 
+import utils.logger as L
 import agents
 
 # Log everything, and send it to stderr.
 logging.basicConfig(level=logging.DEBUG)
 
-def print_agent(agent,move,current_shop):
-    print "--------------------------------------------"
-    print "Agent: " + agent['name']
-    print "position: " + str(agent['position'])
-    print "Coin: " + str(agent['coin'])
-    print "Resources"
-    print agent['resources']
-    print "Move:"
-    print move
-    print "Current Shop: " 
-    print current_shop
-    
-def print_node(shop_node, snode):
-    print "NODE: " + str(shop_node) + " " 
-    print snode
-
-def print_round_start(round_number):
-   print ""
-   print "================= Round: " +  str(round_number) + "============================"
-   print ""
-
-def print_round_end():
-   print ""
-   print "=========================================================================="   
-   print ""
 
 def build_graph(node_count, edge_ratio):
 
@@ -111,10 +87,10 @@ def run_sim():
 
     for round_number in range(num_rounds):
 
-        print_round_start(round_number)
+        L.print_round_start(round_number)
 
         for shop_nodes,node in world_shops.items():
-            print_node(shop_nodes,node)
+            L.print_node(shop_nodes,node)
         print ""
 
         random.shuffle(world_agents)
@@ -186,7 +162,7 @@ def run_sim():
                 else:
                     print "BUY: insufficient quantity in shop, resource: %s " % resource_name
 
-            print_agent(current_agent, move, current_shop)
+            L.print_agent(current_agent, move, current_shop)
 
             # move agent
             if move.get("move", None) is not None:
@@ -197,15 +173,12 @@ def run_sim():
                 else:
                     print "INVALID LOCATION"
 
-    print_round_end()
+    L.print_round_end()
 
     # display winner
 
-    print "RESULTS!!! :"
+    L.print_results(world_agents)
 
-    print sorted(
-        [(a["name"], a["coin"]) for a in world_agents],
-        key = lambda a: a[1], reverse=True)
 
 if __name__ == '__main__':
     run_sim()
