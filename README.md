@@ -16,6 +16,10 @@ Every turn God iterates over the list of agents, calling them with the world sta
                 'gold' : 800,
             }
         },
+        'meta':{
+            "current_round" : 1,
+            "total_rounds" : 10
+        },
         'world': {
             0: {
                 'neighbours': {1:1, 2:1, 3:1}
