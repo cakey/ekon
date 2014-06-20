@@ -121,7 +121,6 @@ def run_sim():
                 continue
 
             current_shop = world_shops[current_agent["position"]]
-            
 
 
             # run agent sell commands
