@@ -126,6 +126,7 @@ def run_sim():
 
             # run agent sell commands
             for resource_name, quantity in move.get("buy", {}).iteritems():
+                quantity = int(quantity)
                 if quantity < 0:
                     print "SELL: negative amount?"
                     continue
@@ -142,6 +143,7 @@ def run_sim():
 
             # run agent buy commands
             for resource_name, quantity in move.get("sell", {}).iteritems():
+                quantity = int(quantity)
                 if quantity < 0:
                     print "BUY: negative amount?"
                     continue
