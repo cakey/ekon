@@ -1,4 +1,4 @@
-shops = False
+shops = True
 agent_name = "stewart_awesome_agent"
 other_agents = False
 agent_coin = True
