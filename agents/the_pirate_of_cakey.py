@@ -32,8 +32,6 @@ def profitable_resources(from_shop_r, to_shop_r):
         if sell_price < buy_price:
             profitable[resource] = (buy_price/sell_price)
 
-    print len(profitable)
-
     return sorted(profitable.items(), reverse=True, key=lambda a: a[1])
 
 def neighbour_profit(world_state, node_label=None):
@@ -67,8 +65,6 @@ def agent(world_state, *args, **kwargs):
 
     (next_node, _) = neighbour_profit(world_state)
 
-    print next_node
-
     if next_node is None:
         # want to check neighbour profit recursively,
         # but for now pick a neighbour at random...
@@ -84,8 +80,6 @@ def agent(world_state, *args, **kwargs):
     # buy as many resources that profit on the next node as possible
 
     profitable = profitable_resources(my_node["resources"], world_state['world'][next_node]["resources"])
-
-    print profitable
 
     coin_available = world_state['you']['coin']    
     buys = {}

@@ -1,12 +1,12 @@
 shops = False
 agent_name = "the_pirate_of_cakey"
 other_agents = False
-agent_coin = True
-agent_position = True
-agent_resources = True
-agent_move = True
-agent_current_shop = True
-round_info = True
+agent_coin = False
+agent_position = False
+agent_resources = False
+agent_move = False
+agent_current_shop = False
+round_info = False
 
 def print_agent(agent,move,current_shop):
     if agent_name == agent["name"]:
