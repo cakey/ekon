@@ -1,9 +1,10 @@
 import copy
 import logging
 import random
+import time
 
-import utils.logger as L
 import agents
+import utils.logger as L
 
 # Log everything, and send it to stderr.
 logging.basicConfig(level=logging.DEBUG)
@@ -80,7 +81,8 @@ def run_sim():
             "func":func,
             "coin": traveller_start_gold,
             "position": random.choice(world_graph.keys()),
-            "resources": {}
+            "resources": {},
+            "time": 0
         } for name,func in agents.agents.iteritems()]
 
     # run game
@@ -109,12 +111,15 @@ def run_sim():
                 "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
             }
 
+            start = time.time()
             try:
                 move = current_agent["func"](state_to_pass)
             except Exception as e:
+                current_agent["time"] += (time.time() - start)
                 print "Exception thrown by %s!" % current_agent['name']
                 logging.exception(e)
                 continue
+            current_agent["time"] += (time.time() - start)
 
             if not isinstance(move, dict):
                 print "move not dict"

@@ -46,6 +46,12 @@ def print_round_end():
 def print_results(world_agents):
     print "RESULTS!!! :"
 
+    print "Final Coin"
     print sorted(
         [(a["name"], a["coin"]) for a in world_agents],
         key = lambda a: a[1], reverse=True)
+
+    print "Time spent"
+    print sorted(
+        [(a["name"], "%.5f" % a["time"]) for a in world_agents],
+        key = lambda a: a[1])
