@@ -131,7 +131,10 @@ def run_sim():
                     print "SELL: negative amount?"
                     continue
                 if resource_name not in current_shop:
-                    print "BUY: shop does not have resource name %s " % resource_name
+                    print "SELL: shop does not have resource name %s " % resource_name
+                    continue
+                if resource_name not in  current_agent["resources"]:
+                    print "SELL: agent does not have resource name %s " % resource_name
                     continue
                 total_price = quantity * current_shop[resource_name]["buy"]
                 if (quantity <= current_agent["resources"].get(resource_name, 0)):
