@@ -114,7 +114,7 @@ def run_sim():
             except Exception as e:
                 print "Exception thrown by %s!" % current_agent['name']
                 logging.exception(e)
-            #print move
+                continue
 
             if not isinstance(move, dict):
                 print "move not dict"
