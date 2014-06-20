@@ -18,7 +18,7 @@ Every turn God iterates over the list of agents, calling them with the world sta
         },
         'meta':{
             "current_round" : 1,
-            "rounds" : 10
+            "total_rounds" : 10
         },
         'world': {
             0: {
