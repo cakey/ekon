@@ -1,4 +1,5 @@
 import math
+import utils as u
 
 markup = 2
 
@@ -42,9 +43,10 @@ def agent(world_state, *args, **kwargs):
 
   buy_tuple = (my_position, 0, {})
 
-  for shop_index in my_neighbours.keys():
-    shop_profit = profit(world_state['world'][shop_index], my_node, world_state['you'])
-    if shop_profit[0] > buy_tuple[1]: buy_tuple = (shop_index,) + shop_profit
+  if not u.is_last_round(world_state):
+    for shop_index in my_neighbours.keys():
+      shop_profit = profit(world_state['world'][shop_index], my_node, world_state['you'])
+      if shop_profit[0] > buy_tuple[1]: buy_tuple = (shop_index,) + shop_profit
 
 
   return {
