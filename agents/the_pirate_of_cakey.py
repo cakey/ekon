@@ -57,7 +57,10 @@ def neighbour_profit(world_state, node_label=None):
         
     return (best_label, highest_profit)
 
-
+# TODO:
+# recursive
+# don't buy on the last round
+# integers
 def agent(world_state, *args, **kwargs):
 
     my_position = world_state['you']['position']
@@ -70,24 +73,28 @@ def agent(world_state, *args, **kwargs):
         # but for now pick a neighbour at random...
         next_node = random.choice(u.neighbours(world_state))
 
+    # what is profitable at our next node?
+    profitable = profitable_resources(my_node["resources"], world_state['world'][next_node]["resources"])
+    
     ### sell
 
-    # sell everything (we can always rebuy)
-    sells = world_state['you']['resources']
+    # sell everything
+    # we need to avoid selling stuff that makes a profit next round
+    sells = {name:q for name,q in world_state['you']['resources'].items() if name not in profitable and name in my_node["resources"].keys()}
 
     ### buy
 
     # buy as many resources that profit on the next node as possible
 
-    profitable = profitable_resources(my_node["resources"], world_state['world'][next_node]["resources"])
 
     coin_available = world_state['you']['coin']    
     buys = {}
   
-    for (name, profit) in profitable:
-        max_q_to_buy = coin_available / my_node["resources"][name]["sell"]
-        buys[name] = min(max_q_to_buy, my_node["resources"][name]["quantity"] + sells.get(name, 0))
-        coin_available -= buys[name] * my_node["resources"][name]["sell"]
+    if not u.is_last_round(world_state):
+        for (name, profit) in profitable:
+            max_q_to_buy = coin_available / my_node["resources"][name]["sell"]
+            buys[name] = min(max_q_to_buy, my_node["resources"][name]["quantity"] + sells.get(name, 0))
+            coin_available -= buys[name] * my_node["resources"][name]["sell"]
 
     return {
         'buy':     sells,
