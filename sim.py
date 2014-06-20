@@ -41,9 +41,16 @@ def build_graph(node_count):
 
     for node_num in range(node_count):
         graph[node_num] = {n:1 for n in range(node_count) if n != node_num} 
-
     return graph
 
+def shop_resource(buyrange, sellrange, quantityrange):
+    buy_price = random.randint(*buyrange)
+    sell_price = random.randint(max(buy_price, sellrange[0]), sellrange[1])
+    return {
+        "buy": buy_price,
+        "sell": sell_price,
+        "quantity": random.randint(*quantityrange)
+    }
 
 def run_sim():
 
@@ -51,21 +58,18 @@ def run_sim():
 
     num_rounds = 20
     traveller_start_gold = 10000
-    resource_prices = [5,15]
+    resource_prices = [5,25]
     starting_quantity = [10,1000]
     node_count = 10
 
     world_graph = build_graph(node_count)
 
-    resource_names = ["GOLD", "SILVER", "NANOCHIPS"]
+    resource_names = ["GOLD", "SILVER", "NANOCHIPS", "CAKE", "AZURE_INSTANCES"]
 
     world_shops = {
         shop: {
-            resource: {
-                "buy": random.randint(*resource_prices),
-                "sell": random.randint(*resource_prices),
-                "quantity": random.randint(*starting_quantity)
-            } for resource in resource_names }
+            resource: shop_resource(resource_prices,resource_prices, starting_quantity)
+            for resource in resource_names }
         for shop in world_graph.keys()}
 
     world_agents = [{
@@ -79,10 +83,13 @@ def run_sim():
     # run game
 
     for round_number in range(num_rounds):
+
         print_round_start(round_number)
 
         for shop_nodes,node in world_shops.items():
             print_node(shop_nodes,node)
+
+        random.shuffle(world_agents)
 
         for current_agent in world_agents:
             state_to_pass = {
