@@ -88,6 +88,7 @@ def run_sim():
 
         for shop_nodes,node in world_shops.items():
             print_node(shop_nodes,node)
+        print ""
 
         random.shuffle(world_agents)
 
@@ -97,6 +98,10 @@ def run_sim():
                     "coin":current_agent["coin"],
                     "position":current_agent["position"],
                     "resources": copy.deepcopy(current_agent["resources"])
+                },
+                "meta": {
+                    "current_round" : round_number,
+                    "total_rounds" : num_rounds
                 },
                 "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
             }
