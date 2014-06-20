@@ -81,9 +81,9 @@ Winner is the agent with the most coin at the end of the rounds.
 * pass through round number so can sell off at end
 * clean up logging
 * cleanup buy/sell confusion
-* allow only % of edges
 
 Done:
+* allow only % of edges
 * allow to move to same location
 * buy price should be < sell price
 * shuffle order turn of players per round

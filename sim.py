@@ -8,12 +8,40 @@ import agents
 logging.basicConfig(level=logging.DEBUG)
 
 
-def build_graph(node_count):
+def build_graph(node_count, edge_ratio):
 
-    graph = {}
+    nodes = range(node_count)
 
-    for node_num in range(node_count):
-        graph[node_num] = {n:1 for n in range(node_count) if n != node_num} 
+    # create spanning tree
+    graph = {nodes[0]:{}}
+
+    chosen_edges = set()
+
+    for node_num in nodes[1:]:
+        neighbour = random.choice(graph.keys())
+        graph[node_num] = {neighbour: 1}
+        graph[neighbour][node_num] = 1
+        chosen_edges.add((neighbour, node_num))
+
+
+    edges_available = set()
+    # add all possible edges
+
+    for i, node_a in enumerate(nodes):
+        for node_b in nodes[(i+1):]:
+            edges_available.add((node_a, node_b))
+
+    edges_available -= chosen_edges
+
+    # add as many edges as needed:
+    k = min(len(edges_available), int(edge_ratio * len(edges_available)+len(chosen_edges)))
+
+    if k > len(chosen_edges):
+
+        for edge_to_add in random.sample(edges_available, k):
+            graph[edge_to_add[0]][edge_to_add[1]] = 1
+            graph[edge_to_add[1]][edge_to_add[0]] = 1
+
     return graph
 
 def shop_resource(buyrange, sellrange, quantityrange):
@@ -33,9 +61,10 @@ def run_sim():
     traveller_start_gold = 10000
     resource_prices = [5,25]
     starting_quantity = [10,1000]
-    node_count = 10
+    node_count = 40
+    edge_ratio = 0.25
 
-    world_graph = build_graph(node_count)
+    world_graph = build_graph(node_count, edge_ratio)
 
     resource_names = ["GOLD", "SILVER", "NANOCHIPS", "CAKE", "AZURE_INSTANCES"]
 
