@@ -1,9 +1,12 @@
-#Determines if it is the last round
 def is_last_round(world_state):
+    """ Returns whether it is the last round"""
     
     current_round = world_state["meta"]["current_round"]
     round_count = world_state["meta"]["total_rounds"]
     
-    if current_round == round_count-1:
-    	return True
-    return False
+    return current_round == round_count-1
+
+def neighbours(world_state, label=None):
+    if label is None:
+        label = world_state["you"]["position"]
+    return world_state["world"][label]["neighbours"].keys()
