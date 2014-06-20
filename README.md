@@ -86,3 +86,4 @@ Winner is the agent with the most coin at the end of the rounds.
 Done:
 * allow to move to same location
 * buy price should be < sell price
+* shuffle order turn of players per round
