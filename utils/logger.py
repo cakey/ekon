@@ -1,5 +1,5 @@
 shops = False
-agent_name = "stewart_awesome_agent"
+agent_name = "the_pirate_of_cakey"
 other_agents = False
 agent_coin = True
 agent_position = True
