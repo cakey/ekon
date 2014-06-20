@@ -42,7 +42,7 @@ def run_sim():
     world_shops = {
         shop: {
             resource: shop_resource(resource_prices,resource_prices, starting_quantity)
-            for resource in resource_names }
+            for resource in random.sample(resource_names, random.randint(1, len(resource_names))) }
         for shop in world_graph.keys()}
 
     world_agents = [{

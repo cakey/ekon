@@ -87,3 +87,4 @@ Done:
 * allow to move to same location
 * buy price should be < sell price
 * shuffle order turn of players per round
+* not all shops have all resources
