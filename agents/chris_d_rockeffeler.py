@@ -1,5 +1,5 @@
 import math
-import logging
+import utils as u
 
 markup = 2
 
@@ -18,7 +18,6 @@ def profit(shop, current_position, you):
 
     if pos_markup >= 1:
       quantity = 0
-      logging.info(pos_markup)
       if current_position['resources'][resource]['sell'] * current_position['resources'][resource]['quantity'] > coin_counter:
         quantity = math.floor(coin_counter / current_position['resources'][resource]['sell'])
       else:
@@ -44,9 +43,10 @@ def agent(world_state, *args, **kwargs):
 
   buy_tuple = (my_position, 0, {})
 
-  for shop_index in my_neighbours.keys():
-    shop_profit = profit(world_state['world'][shop_index], my_node, world_state['you'])
-    if shop_profit[0] > buy_tuple[1]: buy_tuple = (shop_index,) + shop_profit
+  if not u.is_last_round(world_state):
+    for shop_index in my_neighbours.keys():
+      shop_profit = profit(world_state['world'][shop_index], my_node, world_state['you'])
+      if shop_profit[0] > buy_tuple[1]: buy_tuple = (shop_index,) + shop_profit
 
 
   return {

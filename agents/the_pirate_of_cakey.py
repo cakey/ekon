@@ -54,7 +54,7 @@ def neighbour_profit(world_state, node_label=None):
         if p > highest_profit:
             highest_profit = p
             best_label = neighbour
-        
+
     return (best_label, highest_profit)
 
 # TODO:
@@ -75,7 +75,7 @@ def agent(world_state, *args, **kwargs):
 
     # what is profitable at our next node?
     profitable = profitable_resources(my_node["resources"], world_state['world'][next_node]["resources"])
-    
+
     ### sell
 
     # sell everything
@@ -87,9 +87,9 @@ def agent(world_state, *args, **kwargs):
     # buy as many resources that profit on the next node as possible
 
 
-    coin_available = world_state['you']['coin']    
+    coin_available = world_state['you']['coin']
     buys = {}
-  
+
     if not u.is_last_round(world_state):
         for (name, profit) in profitable:
             max_q_to_buy = coin_available / my_node["resources"][name]["sell"]
