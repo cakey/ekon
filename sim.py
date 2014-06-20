@@ -58,12 +58,12 @@ def run_sim():
 
     # setup games
 
-    num_rounds = 20
+    num_rounds = 200
     traveller_start_gold = 10000
     resource_prices = [5,25]
     starting_quantity = [10,1000]
-    node_count = 40
-    edge_ratio = 0.25
+    node_count = 400
+    edge_ratio = 0.1
 
     world_graph = build_graph(node_count, edge_ratio)
 

@@ -85,8 +85,11 @@ Winner is the agent with the most coin at the end of the rounds.
 * pass through round number so can sell off at end
 * clean up logging
 * cleanup buy/sell confusion
+* ability to turn off logging
+* tournament harness with different parameters
 
 Done:
+* only accept integer values
 * allow only % of edges
 * allow to move to same location
 * buy price should be < sell price
