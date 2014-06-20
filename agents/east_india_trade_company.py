@@ -72,12 +72,13 @@ def agent(world_state, *args, **kwargs):
             destination = biggestGoldNode
     else:
         if not utils.is_last_round(world_state):
-            if currentNode['resources'][ITEM]['sell'] < biggestGoldValue:
-                if world_state['you']['resources'][ITEM] > 0:
-                    _max = world_state['you']['coin']/(currentNode['resources'][ITEM]['sell'])
-                    buys[ITEM] = min(_max, currentNode['resources'][ITEM]['quantity'])
+            if ITEM in world_state['you']['resources']:
+                if currentNode['resources'][ITEM]['sell'] < biggestGoldValue:
+                    if world_state['you']['resources'][ITEM] > 0:
+                        _max = world_state['you']['coin']/(currentNode['resources'][ITEM]['sell'])
+                        buys[ITEM] = min(_max, currentNode['resources'][ITEM]['quantity'])
 
-        destination = lowestGoldNode	
+        destination = lowestGoldNode
 
 
     #if  world_state["meta"]["current_round"] == world_state["meta"]["total_rounds"]-2:
