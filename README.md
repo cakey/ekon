@@ -83,12 +83,16 @@ Winner is the agent with the most coin at the end of the rounds.
 * Pass location of other players?
 * Regeneration of resources?
 * pass through round number so can sell off at end
-* clean up logging
+* Improve logging
 * cleanup buy/sell confusion
 * ability to turn off logging
 * tournament harness with different parameters
+* Static worldstates option
+* Configuration  files
 
 Done:
+* clean up logging
+* pass through round number so can sell off at end
 * only accept integer values
 * allow only % of edges
 * allow to move to same location
