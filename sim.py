@@ -8,6 +8,33 @@ import agents
 logging.basicConfig(level=logging.DEBUG)
 
 
+
+def print_agent(agent,move,current_shop):
+    print "--------------------------------------------"
+    print "Agent: " + agent['name']
+    print "position: " + str(agent['position'])
+    print "Coin: " + str(agent['coin'])
+    print "Resources"
+    print agent['resources']
+    print "Move:"
+    print move
+    print "Current Shop: " 
+    print current_shop
+    
+def print_node(shop_node, snode):
+    print "NODE: " + str(shop_node) + " " 
+    print snode
+
+def print_round_start(round_number):
+   print ""
+   print "================= Round: " +  str(round_number) + "============================"
+   print ""
+
+def print_round_end():
+   print ""
+   print "=========================================================================="   
+   print ""
+
 def build_graph(node_count):
 
     graph = {}
@@ -52,10 +79,12 @@ def run_sim():
     # run game
 
     for round_number in range(num_rounds):
-        print "round number: %s" % round_number
-        print "world agents: %s" % world_agents
+        print_round_start(round_number)
+
+        for shop_nodes,node in world_shops.items():
+            print_node(shop_nodes,node)
+
         for current_agent in world_agents:
-            print "agent to play: %s" % current_agent["name"]
             state_to_pass = {
                 "you": {
                     "coin":current_agent["coin"],
@@ -70,14 +99,15 @@ def run_sim():
             except Exception as e:
                 print "Exception thrown by %s!" % current_agent['name']
                 logging.exception(e)
-            print move
+            #print move
 
             if not isinstance(move, dict):
                 print "move not dict"
                 continue
 
             current_shop = world_shops[current_agent["position"]]
-            print "current_shop: %s" % current_shop
+            
+
 
             # run agent sell commands
             for resource_name, quantity in move.get("buy", {}).iteritems():
@@ -117,6 +147,8 @@ def run_sim():
                 else:
                     print "BUY: insufficient quantity in shop, resource: %s " % resource_name
 
+            print_agent(current_agent, move, current_shop)
+
             # move agent
             if move.get("move", None) is not None:
                 if (move["move"] in world_graph[current_agent["position"]].keys() or
@@ -125,6 +157,8 @@ def run_sim():
 
                 else:
                     print "INVALID LOCATION"
+
+    print_round_end()
 
     # display winner
 
@@ -136,3 +170,6 @@ def run_sim():
 
 if __name__ == '__main__':
     run_sim()
+
+
+
