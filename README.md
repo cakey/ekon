@@ -1,4 +1,4 @@
-Ekon
+Ekon :moneybag:
 ====
 
 ### Process
