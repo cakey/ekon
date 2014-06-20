@@ -1,5 +1,4 @@
 import math
-import logging
 
 markup = 2
 
@@ -18,7 +17,6 @@ def profit(shop, current_position, you):
 
     if pos_markup >= 1:
       quantity = 0
-      logging.info(pos_markup)
       if current_position['resources'][resource]['sell'] * current_position['resources'][resource]['quantity'] > coin_counter:
         quantity = math.floor(coin_counter / current_position['resources'][resource]['sell'])
       else:
