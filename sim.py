@@ -90,10 +90,7 @@ def run_sim():
     for round_number in range(num_rounds):
 
         L.print_round_start(round_number)
-
-        for shop_nodes,node in world_shops.items():
-            L.print_node(shop_nodes,node)
-        print ""
+        L.print_nodes(world_shops)
 
         random.shuffle(world_agents)
 
@@ -116,13 +113,12 @@ def run_sim():
                 move = current_agent["func"](state_to_pass)
             except Exception as e:
                 current_agent["time"] += (time.time() - start)
-                print "Exception thrown by %s!" % current_agent['name']
-                logging.exception(e)
+                L.invalid(current_agent, '', e)
                 continue
             current_agent["time"] += (time.time() - start)
 
             if not isinstance(move, dict):
-                print "move not dict"
+                L.invalid(current_agent, "Returned move expected to be type dict, actual: %s" % move)
                 continue
 
             current_shop = world_shops[current_agent["position"]]
@@ -131,13 +127,13 @@ def run_sim():
             for resource_name, quantity in move.get("resources_to_sell_to_shop", {}).iteritems():
                 quantity = int(quantity)
                 if quantity < 0:
-                    print "SELL: negative amount?"
+                    L.invalid(current_agent, "SELL: negative amount?")
                     continue
                 if resource_name not in current_shop:
-                    print "SELL: shop does not have resource name %s" % resource_name
+                    L.invalid(current_agent, "SELL: shop does buy resource name %s" % resource_name)
                     continue
                 if resource_name not in  current_agent["resources"]:
-                    print "SELL: agent does not have resource name %s" % resource_name
+                    L.invalid(current_agent, "SELL: agent does not have resource name %s" % resource_name)
                     continue
                 total_price = quantity * current_shop[resource_name]["buy"]
                 if (quantity <= current_agent["resources"].get(resource_name, 0)):
@@ -145,20 +141,19 @@ def run_sim():
                     current_agent["resources"][resource_name] -= quantity
                     current_agent["coin"] += total_price
                 else:
-                    print "SELL: insufficient quantity"
+                    L.invalid(current_agent, "SELL: agent does not have sufficient quantity of %s" % resource_name)
 
             # run agent buy commands
             for resource_name, quantity in move.get("resources_to_buy_from_shop", {}).iteritems():
                 quantity = int(quantity)
                 if quantity < 0:
-                    print "BUY: negative amount?"
+                    L.invalid(current_agent, "BUY: negative amount?")
                     continue
                 if resource_name not in current_shop:
-                    print "BUY: shop does not have resource name %s" % resource_name
+                    L.invalid(current_agent, "BUY: shop does not have resource name %s" % resource_name)
                     continue
                 total_price = quantity * current_shop[resource_name]["sell"]
                 if quantity <= current_shop[resource_name]["quantity"]:
-
                     if current_agent["coin"] >= total_price:
                         current_shop[resource_name]["quantity"] -= quantity
                         if resource_name not in current_agent["resources"]:
@@ -166,9 +161,9 @@ def run_sim():
                         current_agent["resources"][resource_name] += quantity
                         current_agent["coin"] -= total_price
                     else:
-                        print "BUY: insufficient coin, resource: %s" % resource_name
+                        L.invalid(current_agent, "BUY: insufficient coin to purchase %s" % resource_name)
                 else:
-                    print "BUY: insufficient quantity in shop, resource: %s" % resource_name
+                    L.invalid(current_agent, "BUY: insufficient quantity in shop, resource: %s" % resource_name)
 
             L.print_agent(current_agent, move, current_shop)
 
@@ -177,9 +172,9 @@ def run_sim():
                 if (move["move"] in world_graph[current_agent["position"]].keys() or
                     move["move"] == current_agent["position"]):
                     current_agent["position"] = move["move"]
-
                 else:
-                    print "INVALID LOCATION"
+                    L.invalid(current_agent, "Invalid Location to move to: %s" % move["move"])
+
 
         L.print_round_end()
 

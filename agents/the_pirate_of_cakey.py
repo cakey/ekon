@@ -93,7 +93,7 @@ def agent(world_state, *args, **kwargs):
     if not u.is_last_round(world_state):
         for (name, profit) in profitable:
             max_q_to_buy = coin_available / my_node["resources"][name]["sell"]
-            buys[name] = min(max_q_to_buy, my_node["resources"][name]["quantity"] + sells.get(name, 0))
+            buys[name] = min(max_q_to_buy, my_node["resources"][name]["quantity"])
             coin_available -= buys[name] * my_node["resources"][name]["sell"]
 
     return {

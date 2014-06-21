@@ -1,5 +1,10 @@
+import logging
+
+# Log everything, and send it to stderr.
+logging.basicConfig(level=logging.DEBUG)
+
 shops = False
-agent_name = "the_pirate_of_cakey"
+agent_name = ""
 other_agents = False
 agent_coin = False
 agent_position = False
@@ -9,7 +14,7 @@ agent_current_shop = False
 round_info = False
 
 def print_agent(agent,move,current_shop):
-    if agent_name == agent["name"]:
+    if agent_name == agent["name"] or other_agents:
         print "--------------------------------------------"
         print "Agent: " + agent["name"]
         if agent_position:
@@ -26,10 +31,27 @@ def print_agent(agent,move,current_shop):
             print "Current Shop: "
             print current_shop
 
+def invalid(agent, message='', exc=None):
+    if agent_name == agent["name"] or other_agents:
+        if message:
+            print "Invalid Move(%s): %s" % (agent['name'], message)
+        if exc is not None:
+            print "Exception thrown by %s! :" % agent['name']
+            logging.exception(exc)
+
+
+
 def print_node(shop_node, snode):
     if shops:
         print "NODE: " + str(shop_node)
         print snode
+
+def print_nodes(world_shops):
+    if shops:
+        for shop_nodes,node in world_shops.items():
+            print_node(shop_nodes,node)
+        print ""
+
 
 def print_round_start(round_number):
     if round_info:
