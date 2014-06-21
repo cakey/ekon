@@ -24,7 +24,7 @@ def agent(world_state, *args, **kwargs):
         # TODO
 
     return {
-        'buy':     sells,
-        'sell':    buys,
+        'resources_to_sell_to_shop':     sells,
+        'resources_to_buy_from_shop':    buys,
         'move': destination
     }

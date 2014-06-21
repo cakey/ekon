@@ -50,7 +50,7 @@ def agent(world_state, *args, **kwargs):
 
 
   return {
-    'buy':  sell,
-    'sell': buy_tuple[2],
+    'resources_to_sell_to_shop':  sell,
+    'resources_to_buy_from_shop': buy_tuple[2],
     'move': buy_tuple[0]
   }

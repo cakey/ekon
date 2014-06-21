@@ -128,7 +128,7 @@ def run_sim():
             current_shop = world_shops[current_agent["position"]]
 
             # run agent sell commands
-            for resource_name, quantity in move.get("buy", {}).iteritems():
+            for resource_name, quantity in move.get("resources_to_sell_to_shop", {}).iteritems():
                 quantity = int(quantity)
                 if quantity < 0:
                     print "SELL: negative amount?"
@@ -148,7 +148,7 @@ def run_sim():
                     print "SELL: insufficient quantity"
 
             # run agent buy commands
-            for resource_name, quantity in move.get("sell", {}).iteritems():
+            for resource_name, quantity in move.get("resources_to_buy_from_shop", {}).iteritems():
                 quantity = int(quantity)
                 if quantity < 0:
                     print "BUY: negative amount?"
