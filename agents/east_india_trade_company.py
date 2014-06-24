@@ -1,5 +1,11 @@
 import utils
 
+logging_enabled = False
+
+def log(text):
+   if logging_enabled:
+       print text
+
 def agent(world_state, *args, **kwargs):
 
     myPositon = world_state['you']['position']
@@ -18,9 +24,7 @@ def agent(world_state, *args, **kwargs):
 
     buys, sells = {}, {}
 
-    #print currentNodeNeighbours
-
-    
+    log(currentNodeNeighbours)
 
     #Iterate through all the nodes
     for node_key, node in world_state['world'].items():
@@ -42,8 +46,8 @@ def agent(world_state, *args, **kwargs):
                     biggestGoldNode = node_key   
 
 
-    #print "Lowest Node: " + str(lowestGoldNode) + " Value: " + str(lowestGoldValue) 
-    #print "Biggest Node: " + str(biggestGoldNode) + " Value: " + str(biggestGoldValue) 
+    log( "Lowest Node: " + str(lowestGoldNode) + " Sells at: " + str(lowestGoldValue)) 
+    log( "Biggest Node: " + str(biggestGoldNode) + " Buying for: " + str(biggestGoldValue)) 
 
     #Check if I have more than 1 gold
     if world_state['you']['resources'].get(ITEM, 0) > 0:
@@ -60,7 +64,7 @@ def agent(world_state, *args, **kwargs):
             destination = biggestGoldNode	
     elif world_state['you']['position'] == lowestGoldNode:
 
-            #print "On cheap node buying!"
+            log( "On cheap node buying!")
             
             _max = (world_state['you']['coin']/(currentNode['resources'][ITEM]['sell']))
             
@@ -79,10 +83,6 @@ def agent(world_state, *args, **kwargs):
                         buys[ITEM] = min(_max, currentNode['resources'][ITEM]['quantity'])
 
         destination = lowestGoldNode
-
-
-    #if  world_state["meta"]["current_round"] == world_state["meta"]["total_rounds"]-2:
-    #    sells['GOLD'] = world_state['you']['resources']['GOLD']
 
     if utils.is_last_round(world_state):
         sells[ITEM] = world_state['you']['resources'][ITEM]
