@@ -9,6 +9,15 @@ import utils.logger as L
 # Log everything, and send it to stderr.
 logging.basicConfig(level=logging.DEBUG)
 
+# TODO: JSON config
+num_rounds = 200
+traveller_start_gold = 10000
+resource_prices = [5,25]
+starting_quantity = [10,1000]
+node_count = 400
+edge_ratio = 0.02
+resource_names = ["GOLD", "SILVER", "NANOCHIPS", "CAKE", "AZURE_INSTANCES"]
+mine_rate = [10,80]
 
 def build_graph(node_count, edge_ratio):
 
@@ -46,6 +55,15 @@ def build_graph(node_count, edge_ratio):
 
     return graph
 
+def make_world_shops(world_graph):
+    shops = {}
+    for shop in world_graph.keys():
+        shops[shop] = {
+            resource: shop_resource(resource_prices,resource_prices, starting_quantity)
+            for resource in random.sample(resource_names, random.randint(1, len(resource_names)))
+        }
+    return shops
+
 def shop_resource(buyrange, sellrange, quantityrange):
     buy_price = random.randint(*buyrange)
     sell_price = random.randint(max(buy_price, sellrange[0]), sellrange[1])
@@ -57,24 +75,14 @@ def shop_resource(buyrange, sellrange, quantityrange):
 
 def run_sim():
 
-    # setup games
+    # Here comes the mega function!
+    # TODO: refactor ;)
 
-    num_rounds = 200
-    traveller_start_gold = 10000
-    resource_prices = [5,25]
-    starting_quantity = [10,1000]
-    node_count = 400
-    edge_ratio = 0.1
+    # setup games
 
     world_graph = build_graph(node_count, edge_ratio)
 
-    resource_names = ["GOLD", "SILVER", "NANOCHIPS", "CAKE", "AZURE_INSTANCES"]
-
-    world_shops = {
-        shop: {
-            resource: shop_resource(resource_prices,resource_prices, starting_quantity)
-            for resource in random.sample(resource_names, random.randint(1, len(resource_names))) }
-        for shop in world_graph.keys()}
+    world_shops = make_world_shops(world_graph)
 
     world_agents = [{
             "name":name,

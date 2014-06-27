@@ -80,6 +80,12 @@ Winner is the agent with the most coin at the end of the rounds.
 
 ### TODO
 
+Vision:
+Static Mine rate, Static graph
+shops set prices and mine(and move)
+agents move and buy/sell
+
+
 * Pass location of other players?
 * Regeneration of resources?
 * Improve logging
