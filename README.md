@@ -1,6 +1,10 @@
 Ekon :moneybag:
 ====
 
+A trading simulation where agents compete on a graph-based network of shops.
+
+![Terminal Visualization](screenshot.png)
+
 ### Running
 
 **Basic (headless):**
@@ -16,8 +20,15 @@ python3 run_visual.py
 Controls:
 - `SPACE` - Play/Pause
 - `N` - Step one round
+- `M` - Max speed (no delay)
 - `+/-` - Speed up/slow down
+- `R` - Restart simulation
 - `Q` - Quit
+
+After simulation completes:
+- `1` - Run 1 more
+- `T` - Run 10 more
+- `H` - Run 100 more
 
 ### Process
 
