@@ -9,4 +9,4 @@ def is_last_round(world_state):
 def neighbours(world_state, label=None):
     if label is None:
         label = world_state["you"]["position"]
-    return world_state["world"][label]["neighbours"].keys()
+    return list(world_state["world"][label]["neighbours"].keys())

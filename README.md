@@ -1,6 +1,24 @@
 Ekon :moneybag:
 ====
 
+### Running
+
+**Basic (headless):**
+```bash
+python3 sim.py
+```
+
+**With terminal visualization:**
+```bash
+python3 run_visual.py
+```
+
+Controls:
+- `SPACE` - Play/Pause
+- `N` - Step one round
+- `+/-` - Speed up/slow down
+- `Q` - Quit
+
 ### Process
 
 Every turn God iterates over the list of agents, calling them with the world state. The agent returns what resources they want to buy and sell at their **current node**, and what node they wish to move to.

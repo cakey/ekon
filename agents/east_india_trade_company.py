@@ -4,7 +4,7 @@ logging_enabled = False
 
 def log(text):
    if logging_enabled:
-       print text
+       print(text)
 
 def agent(world_state, *args, **kwargs):
 

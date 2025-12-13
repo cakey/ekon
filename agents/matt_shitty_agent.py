@@ -6,13 +6,13 @@ def agent(world_state, *args, **kwargs):
     my_node = world_state['world'][my_position]
     my_neighbours = my_node['neighbours']
 
-    destination = random.choice(my_neighbours.keys())
+    destination = random.choice(list(my_neighbours.keys()))
 
 
     buys, sells = {}, {}
 
     # Just fucking buy 100 of anything you can afford
-    for resource, info in my_node['resources'].iteritems():
+    for resource, info in my_node['resources'].items():
         if info['quantity'] >= 100 and info['sell'] * 100 <= world_state['you']['coin']:
             buys[resource] = 100
 
@@ -20,7 +20,7 @@ def agent(world_state, *args, **kwargs):
     bought_resource_count = 100 * len(sells)
 
     for i in range(0, bought_resource_count):
-        random_resource = random.choice(world_state['you']['resources'].keys())
+        random_resource = random.choice(list(world_state['you']['resources'].keys()))
         # TODO
 
     return {

@@ -29,7 +29,7 @@ def build_graph(node_count, edge_ratio):
     chosen_edges = set()
 
     for node_num in nodes[1:]:
-        neighbour = random.choice(graph.keys())
+        neighbour = random.choice(list(graph.keys()))
         graph[node_num] = {neighbour: 1}
         graph[neighbour][node_num] = 1
         chosen_edges.add((neighbour, node_num))
@@ -49,7 +49,7 @@ def build_graph(node_count, edge_ratio):
 
     if k > len(chosen_edges):
 
-        for edge_to_add in random.sample(edges_available, k):
+        for edge_to_add in random.sample(list(edges_available), k):
             graph[edge_to_add[0]][edge_to_add[1]] = 1
             graph[edge_to_add[1]][edge_to_add[0]] = 1
 
@@ -73,8 +73,17 @@ def shop_resource(buyrange, sellrange, quantityrange):
         "quantity": random.randint(*quantityrange)
     }
 
-def run_sim():
+def run_sim(observer=None):
+    """
+    Run the trading simulation.
 
+    Args:
+        observer: Optional dict with callbacks:
+            - on_round_end(round_num, total_rounds, agents, shops) -> bool
+              Returns False to stop simulation early
+            - on_agent_action(agent_name, action_type, details)
+              Called when agents buy/sell/move
+    """
     # Here comes the mega function!
     # TODO: refactor ;)
 
@@ -88,10 +97,10 @@ def run_sim():
             "name":name,
             "func":func,
             "coin": traveller_start_gold,
-            "position": random.choice(world_graph.keys()),
+            "position": random.choice(list(world_graph.keys())),
             "resources": {},
             "time": 0
-        } for name,func in agents.agents.iteritems()]
+        } for name,func in agents.agents.items()]
 
     # run game
 
@@ -113,7 +122,7 @@ def run_sim():
                     "current_round" : round_number,
                     "total_rounds" : num_rounds
                 },
-                "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.iteritems()}
+                "world": {w: {"neighbours":neighbours, "resources": world_shops[w]} for w,neighbours in world_graph.items()}
             }
 
             start = time.time()
@@ -132,7 +141,7 @@ def run_sim():
             current_shop = world_shops[current_agent["position"]]
 
             # run agent sell commands
-            for resource_name, quantity in move.get("resources_to_sell_to_shop", {}).iteritems():
+            for resource_name, quantity in move.get("resources_to_sell_to_shop", {}).items():
                 quantity = int(quantity)
                 if quantity < 0:
                     L.invalid(current_agent, "SELL: negative amount?")
@@ -148,11 +157,13 @@ def run_sim():
                     current_shop[resource_name]["quantity"] += quantity
                     current_agent["resources"][resource_name] -= quantity
                     current_agent["coin"] += total_price
+                    if observer and 'on_agent_action' in observer:
+                        observer['on_agent_action'](current_agent["name"], "sold", f"{quantity} {resource_name} for ${total_price:,}")
                 else:
                     L.invalid(current_agent, "SELL: agent does not have sufficient quantity of %s" % resource_name)
 
             # run agent buy commands
-            for resource_name, quantity in move.get("resources_to_buy_from_shop", {}).iteritems():
+            for resource_name, quantity in move.get("resources_to_buy_from_shop", {}).items():
                 quantity = int(quantity)
                 if quantity < 0:
                     L.invalid(current_agent, "BUY: negative amount?")
@@ -168,6 +179,8 @@ def run_sim():
                             current_agent["resources"][resource_name] = 0
                         current_agent["resources"][resource_name] += quantity
                         current_agent["coin"] -= total_price
+                        if observer and 'on_agent_action' in observer:
+                            observer['on_agent_action'](current_agent["name"], "bought", f"{quantity} {resource_name} for ${total_price:,}")
                     else:
                         L.invalid(current_agent, "BUY: insufficient coin to purchase %s" % resource_name)
                 else:
@@ -179,12 +192,20 @@ def run_sim():
             if move.get("move", None) is not None:
                 if (move["move"] in world_graph[current_agent["position"]].keys() or
                     move["move"] == current_agent["position"]):
+                    old_pos = current_agent["position"]
                     current_agent["position"] = move["move"]
+                    if observer and 'on_agent_action' in observer and old_pos != move["move"]:
+                        observer['on_agent_action'](current_agent["name"], "moved", f"to node {move['move']}")
                 else:
                     L.invalid(current_agent, "Invalid Location to move to: %s" % move["move"])
 
 
         L.print_round_end()
+
+        # Call observer at end of round
+        if observer and 'on_round_end' in observer:
+            if not observer['on_round_end'](round_number, num_rounds, world_agents, world_shops):
+                break  # Observer requested stop
 
     # display winner
 

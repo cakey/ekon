@@ -5,8 +5,8 @@ markup = 2
 
 def profit(shop, current_position, you):
 
-  resources = {resource: info for (resource, info) in shop['resources'].iteritems() if resource in current_position['resources']}
-  resource_profitability = sorted(resources.keys(), key = lambda (x): resources[x]['buy'] - current_position['resources'][x]['sell'], reverse = True)
+  resources = {resource: info for (resource, info) in shop['resources'].items() if resource in current_position['resources']}
+  resource_profitability = sorted(resources.keys(), key = lambda x: resources[x]['buy'] - current_position['resources'][x]['sell'], reverse = True)
 
   gains = 0
   buy = {}

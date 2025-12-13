@@ -1,7 +1,7 @@
-import matt_shitty_agent
-import east_india_trade_company
-import the_pirate_of_cakey
-import chris_d_rockeffeler
+from . import matt_shitty_agent
+from . import east_india_trade_company
+from . import the_pirate_of_cakey
+from . import chris_d_rockeffeler
 
 agents = {
   "matt_shitty_agent": matt_shitty_agent.agent,
