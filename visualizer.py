@@ -12,21 +12,23 @@ from collections import deque
 class GameVisualizer:
     """Curses-based visualizer for the Ekon trading simulation."""
 
-    def __init__(self, tick_rate=1.0):
+    def __init__(self, tick_rate=0.5):
         self.tick_rate = tick_rate
+        self.max_speed = False
         self.playing = False
         self.step_requested = False
         self.quit_requested = False
         self.current_state = None
-        self.activity_log = deque(maxlen=20)
+        self.activity_log = deque(maxlen=50)
         self.lock = threading.Lock()
-        self.state_updated = threading.Event()
         self.stdscr = None
+        self.needs_redraw = True
 
     def log_activity(self, message):
         """Add a message to the activity log."""
         with self.lock:
             self.activity_log.append(message)
+            self.needs_redraw = True
 
     def update_state(self, round_num, total_rounds, agents, world_shops):
         """Called by simulation to update display state."""
@@ -37,7 +39,7 @@ class GameVisualizer:
                 'agents': sorted(agents, key=lambda a: a['coin'], reverse=True),
                 'shops': world_shops
             }
-        self.state_updated.set()
+            self.needs_redraw = True
 
     def should_continue(self):
         """Check if simulation should proceed to next round."""
@@ -45,7 +47,8 @@ class GameVisualizer:
             return False
 
         if self.playing:
-            time.sleep(self.tick_rate)
+            if not self.max_speed:
+                time.sleep(self.tick_rate)
             return not self.quit_requested
 
         # Paused - wait for step or play
@@ -59,162 +62,178 @@ class GameVisualizer:
 
         return False
 
-    def _draw_box(self, win, y, x, h, w, title=None):
-        """Draw a box with optional title."""
-        # Corners
-        win.addch(y, x, curses.ACS_ULCORNER)
-        win.addch(y, x + w - 1, curses.ACS_URCORNER)
-        win.addch(y + h - 1, x, curses.ACS_LLCORNER)
+    def _safe_addstr(self, y, x, text, attr=0):
+        """Safely add string, handling edge cases."""
         try:
-            win.addch(y + h - 1, x + w - 1, curses.ACS_LRCORNER)
+            max_y, max_x = self.stdscr.getmaxyx()
+            if y < 0 or y >= max_y or x < 0 or x >= max_x:
+                return
+            # Truncate text to fit
+            available = max_x - x - 1
+            if available <= 0:
+                return
+            self.stdscr.addstr(y, x, text[:available], attr)
         except curses.error:
-            pass  # Bottom right corner can fail
+            pass
 
-        # Horizontal lines
-        for i in range(1, w - 1):
-            win.addch(y, x + i, curses.ACS_HLINE)
-            try:
-                win.addch(y + h - 1, x + i, curses.ACS_HLINE)
-            except curses.error:
-                pass
-
-        # Vertical lines
-        for i in range(1, h - 1):
-            win.addch(y + i, x, curses.ACS_VLINE)
-            try:
-                win.addch(y + i, x + w - 1, curses.ACS_VLINE)
-            except curses.error:
-                pass
-
-        # Title
-        if title:
-            win.addstr(y, x + 2, f" {title} ")
+    def _draw_hline(self, y, x, width):
+        """Draw a horizontal line."""
+        try:
+            max_y, max_x = self.stdscr.getmaxyx()
+            if y < 0 or y >= max_y:
+                return
+            self._safe_addstr(y, x, "-" * min(width, max_x - x - 1))
+        except curses.error:
+            pass
 
     def _draw_screen(self):
         """Render the current state to the screen."""
         if self.stdscr is None:
             return
 
-        self.stdscr.clear()
         max_y, max_x = self.stdscr.getmaxyx()
+
+        # Use erase instead of clear to reduce flicker
+        self.stdscr.erase()
 
         with self.lock:
             state = self.current_state
             log_entries = list(self.activity_log)
 
-        # Header
-        status = "PLAYING" if self.playing else "PAUSED"
-        if state:
-            header = f"  EKON TRADING SIMULATION    Round: {state['round'] + 1}/{state['total_rounds']}   [{status}]  Speed: {self.tick_rate:.1f}s"
+        # Title bar
+        status = "PLAYING" if self.playing else "PAUSED "
+        if self.max_speed:
+            speed_str = "MAX"
         else:
-            header = f"  EKON TRADING SIMULATION    Initializing...   [{status}]"
+            speed_str = f"{self.tick_rate:.1f}s"
+        if state:
+            title = f" EKON  Round {state['round'] + 1}/{state['total_rounds']}  [{status}]  Speed: {speed_str} "
+        else:
+            title = f" EKON  Initializing...  [{status}] "
 
-        self._draw_box(self.stdscr, 0, 0, 3, max_x, "EKON")
-        self.stdscr.addstr(1, 2, header[:max_x - 4])
+        self._safe_addstr(0, 0, "=" * max_x, curses.A_BOLD)
+        self._safe_addstr(0, 2, title, curses.A_BOLD | curses.A_REVERSE)
 
-        # Leaderboard section
-        leaderboard_height = min(10, max_y - 12)
-        self._draw_box(self.stdscr, 3, 0, leaderboard_height, max_x, "LEADERBOARD")
+        # Leaderboard
+        self._safe_addstr(2, 0, " LEADERBOARD", curses.A_BOLD | curses.A_UNDERLINE)
 
         if state and state['agents']:
-            for i, agent in enumerate(state['agents'][:leaderboard_height - 2]):
+            # Calculate profit per round
+            rounds_played = state['round'] + 1
+            starting_coin = 10000  # From sim.py traveller_start_gold
+
+            for i, agent in enumerate(state['agents'][:8]):
+                y = 3 + i
+                if y >= max_y - 8:
+                    break
                 rank = i + 1
-                name = agent['name'][:25]
-                coin = agent['coin']
-                pos = agent['position']
-                resources = sum(agent['resources'].values()) if agent['resources'] else 0
 
-                line = f" {rank}. {name:<26} ${coin:>10,}   Node {pos:<4}  [{resources} items]"
-                try:
-                    self.stdscr.addstr(4 + i, 2, line[:max_x - 4])
-                except curses.error:
-                    pass
+                # Calculate dynamic name width based on terminal size
+                fixed_width = 35  # rank + coin + ppr
+                name_width = max(15, max_x - fixed_width - 4)
+                name = agent['name'][:name_width].ljust(name_width)
 
-        # Activity log section
-        log_start = 3 + leaderboard_height
-        log_height = max_y - log_start - 4
-        if log_height > 2:
-            self._draw_box(self.stdscr, log_start, 0, log_height, max_x, "RECENT ACTIVITY")
+                coin = f"${agent['coin']:>10,}"
+                profit = agent['coin'] - starting_coin
+                profit_per_round = profit / rounds_played
+                ppr_str = f"{profit_per_round:>+8,.0f}/r"
 
-            visible_logs = log_entries[-(log_height - 2):]
+                line = f" {rank}. {name} {coin}  {ppr_str}"
+                # Pad to full width
+                line = line.ljust(max_x - 1)
+
+                # Highlight top 3
+                attr = curses.A_BOLD if rank <= 3 else 0
+                self._safe_addstr(y, 0, line, attr)
+
+        # Separator
+        log_start = min(12, max_y - 10)
+        self._draw_hline(log_start, 0, max_x)
+
+        # Activity log
+        self._safe_addstr(log_start + 1, 0, " ACTIVITY LOG", curses.A_BOLD | curses.A_UNDERLINE)
+
+        log_height = max_y - log_start - 5
+        if log_height > 0:
+            visible_logs = log_entries[-log_height:]
             for i, entry in enumerate(visible_logs):
-                try:
-                    self.stdscr.addstr(log_start + 1 + i, 2, f"> {entry}"[:max_x - 4])
-                except curses.error:
-                    pass
+                y = log_start + 2 + i
+                if y >= max_y - 3:
+                    break
+                self._safe_addstr(y, 1, f"> {entry}")
 
-        # Controls bar
-        controls_y = max_y - 3
-        self._draw_box(self.stdscr, controls_y, 0, 3, max_x, "CONTROLS")
-        controls = "[SPACE] Play/Pause  [N] Step  [+/-] Speed  [Q] Quit"
-        try:
-            self.stdscr.addstr(controls_y + 1, 2, controls[:max_x - 4])
-        except curses.error:
-            pass
+        # Controls bar at bottom
+        self._draw_hline(max_y - 2, 0, max_x)
+        controls = " [SPACE] Play/Pause  [N] Step  [+/-] Speed  [M] Max Speed  [Q] Quit "
+        self._safe_addstr(max_y - 1, 0, controls, curses.A_REVERSE)
 
+        # Single refresh at the end
         self.stdscr.refresh()
-
-    def _input_loop(self):
-        """Handle keyboard input in separate thread."""
-        self.stdscr.nodelay(True)
-        while not self.quit_requested:
-            try:
-                key = self.stdscr.getch()
-                if key == ord('q') or key == ord('Q'):
-                    self.quit_requested = True
-                elif key == ord(' '):
-                    self.playing = not self.playing
-                elif key == ord('n') or key == ord('N'):
-                    self.step_requested = True
-                elif key == ord('+') or key == ord('='):
-                    self.tick_rate = max(0.1, self.tick_rate - 0.1)
-                elif key == ord('-') or key == ord('_'):
-                    self.tick_rate = min(5.0, self.tick_rate + 0.1)
-            except curses.error:
-                pass
-            time.sleep(0.05)
-
-    def _display_loop(self):
-        """Update display in separate thread."""
-        while not self.quit_requested:
-            self._draw_screen()
-            time.sleep(0.1)
 
     def run(self, sim_func):
         """
         Run the visualizer with a simulation function.
 
         Args:
-            sim_func: A function that takes (observer_callback) and runs the simulation.
-                     The callback receives (round_num, total_rounds, agents, shops).
+            sim_func: A function that takes (visualizer) and runs the simulation.
         """
         def curses_main(stdscr):
             self.stdscr = stdscr
-            curses.curs_set(0)  # Hide cursor
 
-            # Start input handling thread
-            input_thread = threading.Thread(target=self._input_loop, daemon=True)
-            input_thread.start()
+            # Proper curses setup
+            curses.curs_set(0)          # Hide cursor
+            stdscr.nodelay(True)        # Non-blocking input
+            stdscr.timeout(50)          # 50ms timeout for getch
 
-            # Start display update thread
-            display_thread = threading.Thread(target=self._display_loop, daemon=True)
-            display_thread.start()
+            # Start simulation in background thread
+            sim_thread = threading.Thread(target=lambda: sim_func(self), daemon=True)
+            sim_thread.start()
 
-            # Run simulation in main thread
-            try:
-                sim_func(self)
-            except Exception as e:
-                self.quit_requested = True
-                raise
+            # Main loop - handle input and redraw
+            while not self.quit_requested:
+                # Handle input
+                try:
+                    key = stdscr.getch()
+                    if key == ord('q') or key == ord('Q'):
+                        self.quit_requested = True
+                    elif key == ord(' '):
+                        self.playing = not self.playing
+                        self.needs_redraw = True
+                    elif key == ord('n') or key == ord('N'):
+                        self.step_requested = True
+                    elif key == ord('m') or key == ord('M'):
+                        self.max_speed = not self.max_speed
+                        self.needs_redraw = True
+                    elif key == ord('+') or key == ord('='):
+                        self.max_speed = False
+                        self.tick_rate = max(0.1, self.tick_rate - 0.1)
+                        self.needs_redraw = True
+                    elif key == ord('-') or key == ord('_'):
+                        self.max_speed = False
+                        self.tick_rate = min(5.0, self.tick_rate + 0.1)
+                        self.needs_redraw = True
+                    elif key == curses.KEY_RESIZE:
+                        self.needs_redraw = True
+                except curses.error:
+                    pass
 
-            # Wait a moment to show final state
-            if not self.quit_requested:
-                self.playing = False
+                # Redraw screen
                 self._draw_screen()
-                self.stdscr.nodelay(False)
-                self.stdscr.addstr(self.stdscr.getmaxyx()[0] - 1, 2, "Simulation complete. Press any key to exit.")
-                self.stdscr.refresh()
-                self.stdscr.getch()
+
+                # Check if simulation ended
+                if not sim_thread.is_alive() and not self.quit_requested:
+                    self.playing = False
+                    self._draw_screen()
+                    self._safe_addstr(self.stdscr.getmaxyx()[0] - 1, 0,
+                                     " Simulation complete! Press Q to exit ".ljust(self.stdscr.getmaxyx()[1]),
+                                     curses.A_REVERSE | curses.A_BOLD)
+                    self.stdscr.refresh()
+                    stdscr.nodelay(False)
+                    while True:
+                        key = stdscr.getch()
+                        if key == ord('q') or key == ord('Q'):
+                            break
+                    break
 
         curses.wrapper(curses_main)
 
@@ -222,8 +241,6 @@ class GameVisualizer:
 def create_observer(visualizer):
     """
     Create an observer function for the simulation.
-
-    Returns a dict with callbacks for the simulation to use.
     """
     def on_round_end(round_num, total_rounds, agents, world_shops):
         visualizer.update_state(round_num, total_rounds, agents, world_shops)

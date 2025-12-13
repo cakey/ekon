@@ -1,5 +1,5 @@
 import math
-import utils as u
+from . import utils as u
 
 markup = 2
 

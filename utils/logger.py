@@ -3,6 +3,9 @@ import logging
 # Log everything, and send it to stderr.
 logging.basicConfig(level=logging.DEBUG)
 
+# Master quiet mode - suppresses all output
+quiet = False
+
 shops = False
 agent_name = ""
 other_agents = False
@@ -67,6 +70,9 @@ def print_round_end():
         print("")
 
 def print_results(world_agents):
+    if quiet:
+        return
+
     print("=================== RESULTS!!! ===================")
 
     print("Final Coin")

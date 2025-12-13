@@ -73,7 +73,7 @@ def shop_resource(buyrange, sellrange, quantityrange):
         "quantity": random.randint(*quantityrange)
     }
 
-def run_sim(observer=None):
+def run_sim(observer=None, debug_log=False, quiet=False):
     """
     Run the trading simulation.
 
@@ -83,7 +83,20 @@ def run_sim(observer=None):
               Returns False to stop simulation early
             - on_agent_action(agent_name, action_type, details)
               Called when agents buy/sell/move
+        debug_log: If True, write detailed debug log to file
+        quiet: If True, suppress all console output (for visualizer mode)
     """
+    # Setup debug logger
+    dlog = None
+    if debug_log:
+        from debug_logger import DebugLogger
+        dlog = DebugLogger()
+
+    # Suppress console output in quiet mode
+    if quiet:
+        logging.getLogger().setLevel(logging.CRITICAL)
+        L.quiet = True
+
     # Here comes the mega function!
     # TODO: refactor ;)
 
@@ -102,9 +115,14 @@ def run_sim(observer=None):
             "time": 0
         } for name,func in agents.agents.items()]
 
+    if dlog:
+        dlog.log_setup(world_graph, world_shops, world_agents)
+
     # run game
 
     for round_number in range(num_rounds):
+        if dlog:
+            dlog.log_round_start(round_number, num_rounds, world_agents)
 
         L.print_round_start(round_number)
         L.print_nodes(world_shops)
@@ -126,13 +144,19 @@ def run_sim(observer=None):
             }
 
             start = time.time()
+            move = None
             try:
                 move = current_agent["func"](state_to_pass)
             except Exception as e:
                 current_agent["time"] += (time.time() - start)
                 L.invalid(current_agent, '', e)
+                if dlog:
+                    dlog.log_agent_exception(current_agent["name"], e)
                 continue
             current_agent["time"] += (time.time() - start)
+
+            if dlog:
+                dlog.log_agent_turn(current_agent, state_to_pass, move)
 
             if not isinstance(move, dict):
                 L.invalid(current_agent, "Returned move expected to be type dict, actual: %s" % move)
@@ -157,9 +181,13 @@ def run_sim(observer=None):
                     current_shop[resource_name]["quantity"] += quantity
                     current_agent["resources"][resource_name] -= quantity
                     current_agent["coin"] += total_price
+                    if dlog:
+                        dlog.log_transaction(current_agent["name"], "sell", resource_name, quantity, current_shop[resource_name]["buy"], True)
                     if observer and 'on_agent_action' in observer:
                         observer['on_agent_action'](current_agent["name"], "sold", f"{quantity} {resource_name} for ${total_price:,}")
                 else:
+                    if dlog:
+                        dlog.log_transaction(current_agent["name"], "sell", resource_name, quantity, current_shop[resource_name]["buy"], False, "insufficient quantity")
                     L.invalid(current_agent, "SELL: agent does not have sufficient quantity of %s" % resource_name)
 
             # run agent buy commands
@@ -179,11 +207,17 @@ def run_sim(observer=None):
                             current_agent["resources"][resource_name] = 0
                         current_agent["resources"][resource_name] += quantity
                         current_agent["coin"] -= total_price
+                        if dlog:
+                            dlog.log_transaction(current_agent["name"], "buy", resource_name, quantity, current_shop[resource_name]["sell"], True)
                         if observer and 'on_agent_action' in observer:
                             observer['on_agent_action'](current_agent["name"], "bought", f"{quantity} {resource_name} for ${total_price:,}")
                     else:
+                        if dlog:
+                            dlog.log_transaction(current_agent["name"], "buy", resource_name, quantity, current_shop[resource_name]["sell"], False, "insufficient coin")
                         L.invalid(current_agent, "BUY: insufficient coin to purchase %s" % resource_name)
                 else:
+                    if dlog:
+                        dlog.log_transaction(current_agent["name"], "buy", resource_name, quantity, current_shop[resource_name]["sell"], False, "shop out of stock")
                     L.invalid(current_agent, "BUY: insufficient quantity in shop, resource: %s" % resource_name)
 
             L.print_agent(current_agent, move, current_shop)
@@ -194,13 +228,20 @@ def run_sim(observer=None):
                     move["move"] == current_agent["position"]):
                     old_pos = current_agent["position"]
                     current_agent["position"] = move["move"]
+                    if dlog and old_pos != move["move"]:
+                        dlog.log_movement(current_agent["name"], old_pos, move["move"], True)
                     if observer and 'on_agent_action' in observer and old_pos != move["move"]:
                         observer['on_agent_action'](current_agent["name"], "moved", f"to node {move['move']}")
                 else:
+                    if dlog:
+                        dlog.log_movement(current_agent["name"], current_agent["position"], move["move"], False, "invalid destination")
                     L.invalid(current_agent, "Invalid Location to move to: %s" % move["move"])
 
 
         L.print_round_end()
+
+        if dlog:
+            dlog.log_round_end(world_agents)
 
         # Call observer at end of round
         if observer and 'on_round_end' in observer:
@@ -208,6 +249,10 @@ def run_sim(observer=None):
                 break  # Observer requested stop
 
     # display winner
+
+    if dlog:
+        dlog.log_final_results(world_agents)
+        dlog.close()
 
     L.print_results(world_agents)
 

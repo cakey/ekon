@@ -1,6 +1,6 @@
 import random
 
-import utils as u
+from . import utils as u
 
 def profit(info):
     return info["buy"] - info["sell"]
