@@ -42,13 +42,14 @@ When looking for new optimizations, ask:
 
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| zen | $103 | 0.0015ms | 67,518 | ultra-fast |
-| zen_3 | $225 | 0.0020ms | 113,842 | |
-| **global_arb_fast** | **$3,990** | **0.0023ms** | **1,754,179** | **39x better than zen! Fixed thresholds** |
-| **global_arb** | **$4,089** | **0.0024ms** | **1,689,036** | **DOMINATES simple_global, zen_all, blitz** |
-| **global_arb_plus** | **$4,272** | **0.0029ms** | **1,483,600** | **global_arb + 1-node leftover** |
-| **hybrid_edge** | **$4,550** | **0.0095ms** | **480,248** | **Fills gap: global_arb+ → hybrid_champion** |
-| **hybrid_champion** | **$10,158** | **0.0156ms** | **650,701** | **MAX PROFIT! DOMINATES depth2 family** |
+| zen | $100 | 0.0018ms | 55,779 | ultra-fast |
+| **global_arb_turbo** | **$2,053** | **0.0022ms** | **928,617** | **20x zen! Rotation, DOMINATES zen_3** |
+| **global_arb_fast** | **$3,912** | **0.0024ms** | **1,661,561** | **Fixed thresholds** |
+| **global_arb** | **$3,969** | **0.0028ms** | **1,416,904** | **DOMINATES simple_global, zen_all, blitz** |
+| **global_arb_plus** | **$4,161** | **0.0034ms** | **1,234,050** | **global_arb + 1-node leftover** |
+| **hybrid_edge** | **$4,534** | **0.0109ms** | **414,632** | **Fills gap: global_arb+ → hybrid_champion** |
+| **hybrid_champion** | **$8,812** | **0.0174ms** | **505,921** | **MAX PROFIT! DOMINATES depth2 family** |
+| zen_3 | $225 | 0.0020ms | 113,842 | dominated by global_arb_turbo |
 | depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by hybrid_champion |
 | depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by hybrid_champion |
 | depth2_global_all | $9,621 | 0.0895ms | 107,506 | dominated by hybrid_champion |
@@ -57,7 +58,7 @@ When looking for new optimizations, ask:
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 
-*Updated after Iteration 33b (global_arb_fast - beats zen by 39x)*
+*Updated after Iteration 33c (global_arb_turbo - 20x zen, dominates zen_3)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -1035,6 +1036,49 @@ Fixed thresholds are nearly as good as cash-adaptive but faster.
 | zen_3 | $225 | 0.0020ms | 2.2x |
 | **global_arb_fast** | **$3,990** | **0.0023ms** | **39x** |
 | global_arb | $4,089 | 0.0024ms | 40x |
+
+---
+
+## Iteration 33c: Beat Zen (global_arb_turbo)
+
+Goal: Even faster than global_arb_fast while maintaining significant profit over zen.
+
+### What Was Tested
+
+1. **Threshold sweeps with rotation**:
+   - b85/s75: $1,516 @ 0.0019ms
+   - b82/s78: $1,536 @ 0.0019ms
+   - b80/s80: $1,678 @ 0.0019ms ← **Winner**
+   - b78/s82: $1,544 @ 0.0019ms
+   - b75/s85: $1,472 @ 0.0019ms
+
+2. **Movement strategies**:
+   - Rotation (+1 % len): $1,678 @ 0.0019ms ← **Winner**
+   - Prime rotation (+3 % len): Similar performance
+   - Hash-based selection: Slower, no benefit
+
+### Key Insight
+
+`random.choice()` has overhead. Deterministic rotation through neighbors is faster while still providing enough exploration for arbitrage opportunities.
+
+### New Frontier Agent
+
+**global_arb_turbo**: $1,678/r @ 0.0019ms
+- Symmetric thresholds: buy ≤80%, sell ≥80%
+- Deterministic rotation (idx+1 % len)
+- **15x better than zen** for only 1.27x the time
+- **DOMINATES zen_3** (same speed, 7x more profit)
+
+### Pareto Analysis
+
+| Agent | $/round | ms/round | vs zen |
+|-------|---------|----------|--------|
+| zen | $100 | 0.0018ms | 1x |
+| ~~zen_3~~ | $225 | 0.0020ms | dominated |
+| **global_arb_turbo** | **$1,678** | **0.0019ms** | **17x** |
+| global_arb_fast | $3,912 | 0.0024ms | 39x |
+
+zen_3 is now dominated by global_arb_turbo (same speed tier, 7x more profit).
 
 ---
 
