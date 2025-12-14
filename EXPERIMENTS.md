@@ -574,6 +574,24 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 
 ---
 
+## Iteration 23: Exotic Algorithms (ALL FAILED)
+
+Tested several advanced algorithmic approaches. None beat hand-tuned agents.
+
+| Algorithm | Result | Why Failed |
+|-----------|--------|------------|
+| Monte Carlo (5 random rollouts) | -$536/r | Random paths worse than greedy best |
+| Beam Search (top-3, depth-3) | -$1142/r | Alt paths aren't hidden gems |
+| Epsilon-Greedy (10% explore) | -$77/r | Exploration hurts in deterministic env |
+| Genetic Algorithm | Dominated by v3 | Found local optimum, not global |
+| Inventory-Aware Pathing | +$44/r, +0.004ms | Marginal tradeoff, not dominant |
+
+**Key Insight:** Environment is fully observable and deterministic. Greedy approaches work well. Exotic algorithms add overhead without finding hidden value.
+
+**Numba/Cython:** Not tested (numba not installed). Could still provide speedup via compilation.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
