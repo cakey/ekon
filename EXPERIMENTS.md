@@ -49,7 +49,8 @@ When looking for new optimizations, ask:
 | ~~global_arb_plus~~ | $4,218 | 0.0036ms | 1,184,633 | dominated by backtrack_fast |
 | **backtrack_fast** | **$4,321** | **0.0034ms** | **1,279,276** | **DOMINATES global_arb_plus! Backtrack avoidance** |
 | **hybrid_edge** | **$4,534** | **0.0109ms** | **414,632** | **Fills gap: global_arb+ → hybrid_champion** |
-| **hybrid_champion** | **$8,812** | **0.0174ms** | **505,921** | **MAX PROFIT! DOMINATES depth2 family** |
+| ~~hybrid_champion~~ | $9,888 | 0.0191ms | 517,696 | dominated by max_profit |
+| **max_profit** | **$10,116** | **0.0172ms** | **588,000** | **NEW MAX PROFIT! DOMINATES hybrid_champion** |
 | zen_3 | $225 | 0.0020ms | 113,842 | dominated by global_arb_turbo |
 | depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by hybrid_champion |
 | depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by hybrid_champion |
@@ -59,7 +60,7 @@ When looking for new optimizations, ask:
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 
-*Updated after Iteration 34 (backtrack_fast - DOMINATES global_arb_plus)*
+*Updated after Iteration 35 (max_profit - DOMINATES hybrid_champion)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -1139,6 +1140,59 @@ while random movement can sometimes backtrack.
 3. **Randomness is essential**: Some randomness in movement is necessary to avoid
    getting stuck in local patterns. Backtrack avoidance preserves this while
    guaranteeing forward progress.
+
+---
+
+## Iteration 35: Max Profit (DOMINATES hybrid_champion)
+
+Goal: Push for maximum profit, even at the cost of efficiency.
+
+### What Was Tested
+
+1. **Deeper movement lookahead (depth 2-3)**: WORSE than hybrid_champion
+   - depth2_movement: -$1,431/r (11x slower)
+   - depth3_movement: -$2,273/r (18x slower)
+   - The graph is too random for long-term planning
+
+2. **BFS/path planning**: WORSE
+   - bfs_best_route: -$2,841/r (78x slower!)
+   - Finding "optimal" routes doesn't work
+
+3. **Buy threshold optimization**: SUCCESS!
+   - Tested 80%, 82%, 84%, 85%, 86%, 87%, 88%
+   - Optimal: 85% (vs hybrid_champion's 80%)
+   - +$228/r improvement AND faster
+
+4. **Sell threshold changes**: No improvement
+   - Patient selling (70-95%): -$430/r
+   - Lower selling (50-85%): +$211/r but 85% buy is better alone
+
+### Key Insight
+
+**Deeper planning hurts, but threshold tuning helps.** The graph is too random for
+multi-step planning to be effective. Instead, optimizing the buy/sell thresholds
+yields better results.
+
+The winning change is simple: buy at up to 85% of global max instead of 80%.
+This captures more arbitrage opportunities without sacrificing sell prices.
+
+### New Frontier Agent
+
+**max_profit**: $10,116/r @ 0.0172ms
+- 85% buy threshold (was 80%)
+- Same sell thresholds (60%-90%)
+- **DOMINATES hybrid_champion** (more profit AND faster!)
+
+### Learnings
+
+1. **Long-term planning doesn't help in random graphs**: The environment is too
+   stochastic for multi-step path planning to be beneficial.
+
+2. **Threshold tuning > algorithm complexity**: A 5% change in buy threshold
+   beats 10x more complex algorithms.
+
+3. **More aggressive buying works**: Buying at 85% of global max instead of 80%
+   captures more opportunities without hurting sell margins.
 
 ---
 
