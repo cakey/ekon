@@ -13,10 +13,12 @@ When testing a new agent, compare against **all frontier agents**, not just the 
 **Current Frontier Agents:**
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| blitz | $3,570 | 0.008ms | 460,975 | fastest |
-| v1 | $5,052 | 0.057ms | 88,632 | balanced-fast |
-| v2 | $6,298 | 0.086ms | 73,398 | balanced |
-| v3 | $6,875 | 0.161ms | 42,774 | max profit |
+| blitz+nas | $3,748 | 0.007ms | 535,429 | fastest |
+| v1 | $5,023 | 0.052ms | 96,596 | balanced-fast |
+| v2+nas | $6,668 | 0.087ms | 76,644 | balanced (BEST) |
+| v3 | $6,823 | 0.168ms | 40,613 | max profit |
+
+*Updated after Iteration 5: blitz+nas replaces blitz, v2+nas dominates v2*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -345,6 +347,41 @@ The sell_threshold feature (v3) adds ~$577/round profit but costs 0.075ms extra.
 
 ---
 
+## Iteration 5: Neighbor-Aware Selling (Testing Across Frontier)
+
+**Idea:** Only sell resources if destination shop doesn't pay more (simpler than global threshold)
+
+Tested on ALL frontier agents per methodology:
+
+| Agent | Base $/r | +NAS $/r | Δ$/r | Base ms | +NAS ms | Verdict |
+|-------|----------|----------|------|---------|---------|---------|
+| blitz | $3,536 | $3,748 | **+$212** | 0.007 | 0.007 | **FRONTIER** |
+| v1 | $5,023 | $1,288 | **-$3,735** | 0.052 | 0.045 | DISASTER |
+| v2 | $6,240 | $6,668 | **+$428** | 0.088 | 0.087 | **DOMINATES v2!** |
+| v3 | $6,823 | $6,668 | -$155 | 0.168 | 0.087 | tradeoff |
+
+**Analysis - Why did it help/hurt each agent?**
+
+1. **blitz+nas HELPS (+$212)**: Blitz is depth-1 with no sell awareness. NAS lets it capture value on next move without any time cost.
+
+2. **v1+nas DISASTER (-$3,735)**: v1 has qty cap (100) and top-4 neighbor pruning. Its limited vision means it can't properly evaluate what to do with carried items. The scoring doesn't account for inventory value.
+
+3. **v2+nas HELPS (+$428)**: v2 has full depth-2 visibility with ALL neighbors. It can properly evaluate where to carry items. NAS adds profit with negligible time cost.
+
+4. **v3+nas TRADEOFF**: v3's global threshold (0.75) is MORE selective than NAS (local comparison). NAS sells more often → less profit but much faster (no global scan). Not strictly better or worse.
+
+**Frontier Update:**
+- **v2+nas dominates v2** → v2 removed from frontier
+- **blitz+nas joins frontier** → new fastest profitable option
+- v3+nas dominated by v2+nas (same profit, slower)
+
+**Key Learning:** Ideas interact differently with agent architecture:
+- NAS helps agents with good visibility (blitz, v2)
+- NAS hurts agents with limited visibility (v1's caps/pruning)
+- NAS conflicts with agents that already have sell logic (v3)
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
@@ -352,12 +389,13 @@ The sell_threshold feature (v3) adds ~$577/round profit but costs 0.075ms extra.
 - [x] ~~Early termination~~ → Threshold 8000 too aggressive, kills profit
 - [x] ~~Alternative scoring~~ → Standard margin×qty is correct
 - [x] ~~Tune adaptive threshold~~ → 4000 is optimal (tested 1000-10000)
+- [x] ~~Neighbor-aware selling~~ → Helps blitz/v2, hurts v1, conflicts with v3
 - [ ] Resource memory (track purchase price, ensure profit on sale)
 - [ ] Opponent modeling (avoid nodes where others are heading)
 - [ ] Price prediction (resources get depleted, prices might change)
 - [ ] Path caching (precompute common routes)
-- [ ] **Faster global price computation** - current impl iterates all nodes, maybe sample or cache?
-- [ ] **Beat v2** - need same profit + faster, OR more profit + same speed
+- [ ] Fix v1's limited vision (remove caps?) to enable NAS
+- [ ] Combine v3's global threshold WITH NAS?
 
 ---
 
@@ -368,8 +406,57 @@ The sell_threshold feature (v3) adds ~$577/round profit but costs 0.075ms extra.
 | blitz | $3,570 | 0.008ms | 460,975 | 1-step, fastest |
 | lookahead | $3,000 | 2ms | 1,500 | 4-step simulation |
 | champion_v1 | $5,052 | 0.057ms | 88,632 | depth2 top4 |
-| **champion_v2** | **$6,298** | **0.086ms** | **73,398** | **depth2 ALL, no cap (BEST EFFICIENCY)** |
-| champion_v3 | $6,875 | 0.161ms | 42,774 | + sell threshold 0.75 (max profit, -42% eff) |
+| champion_v2 | $6,298 | 0.086ms | 73,398 | depth2 ALL, no cap |
+| champion_v3 | $6,875 | 0.161ms | 42,774 | + sell threshold 0.75 (max profit) |
 | champion_v4 | $6,284 | 0.118ms | 53,063 | adaptive depth - REGRESSION from v2 |
+| **blitz+nas** | **$3,748** | **0.007ms** | **535,429** | **+ neighbor-aware selling (NEW FRONTIER)** |
+| **v2+nas** | **$6,668** | **0.087ms** | **76,644** | **+ neighbor-aware selling (DOMINATES v2)** |
 
-**Lesson learned:** v3→v4 was optimizing against wrong baseline. Always compare to best, not most recent.
+**Lessons learned:**
+- v3→v4 was optimizing against wrong baseline. Always compare to best, not most recent.
+- Test ideas across ALL frontier agents to understand interactions with architecture.
+
+---
+
+## Meta-Cycle Improvements
+
+After each iteration, reflect on the experimental process itself.
+
+### What Worked Well (Iteration 5)
+
+1. **Testing across all frontier agents** revealed that NAS helped blitz/v2 but hurt v1. Without testing all, we'd have wrong conclusions.
+
+2. **Automatic Pareto dominance check** immediately flagged v2 as dominated, preventing us from keeping obsolete agents.
+
+3. **Analyzing WHY** each agent responded differently built understanding:
+   - NAS helps agents with good visibility
+   - NAS hurts agents with limited vision (can't evaluate carried items)
+   - NAS conflicts with existing sell logic
+
+### Hypotheses for Future Meta-Improvements
+
+1. **Prediction before testing**: Before running experiments, write down expected outcome for each variant. Compare predictions to actual results. Wrong predictions reveal gaps in understanding.
+
+2. **Feature decomposition**: When an idea fails on one agent but succeeds on another, identify which architectural feature caused the difference. Creates reusable knowledge.
+
+3. **Confidence intervals**: Current method uses 30-50 runs with same seeds. Should we compute standard deviation and reject results within noise range?
+
+4. **Idea generation systematically**:
+   - Look at what frontier agents do differently
+   - Ask: "What if we combined X from agent A with Y from agent B?"
+   - Ask: "What information is available but unused?"
+
+5. **Time-to-insight tracking**: How long does each iteration take? Are we getting faster at finding improvements?
+
+6. **Failure taxonomy**: Categorize WHY ideas fail:
+   - Computational overhead exceeds benefit
+   - Conflicts with existing logic
+   - Agent architecture can't exploit the idea
+   - Idea is just wrong
+
+### Next Iteration Focus
+
+Based on Iteration 5 learnings:
+- v1 failed because its limited vision (top-4, qty cap) can't handle carrying items
+- **Hypothesis**: Remove v1's caps → might enable NAS benefit
+- **Or**: Different idea that works WITH limited vision, not against it

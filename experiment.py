@@ -182,12 +182,14 @@ def main():
     # ==========================================================================
     # PARETO FRONTIER AGENTS - always include these as baselines
     # See EXPERIMENTS.md "Experimental Methodology" for validation rules
+    # Updated after Iteration 5: blitz+nas, v2+nas now on frontier
     # ==========================================================================
+    from agents import champion_v5, champion_v5_blitz
     frontier = [
-        (blitz.agent, "blitz"),           # fastest
-        (champion_v1.agent, "v1"),         # balanced-fast
-        (champion_v2.agent, "v2"),         # balanced (BEST EFFICIENCY)
-        (champion_v3.agent, "v3"),         # max profit
+        (champion_v5_blitz.agent, "blitz+nas"),  # fastest (replaces blitz)
+        (champion_v1.agent, "v1"),                # balanced-fast
+        (champion_v5.agent, "v2+nas"),            # balanced (BEST - dominates v2)
+        (champion_v3.agent, "v3"),                # max profit
     ]
 
     # ==========================================================================
@@ -200,7 +202,7 @@ def main():
     #   rockeffeler: $300/r @ 0.015ms
     # ==========================================================================
     experimental = [
-        # Add new agents here to test against frontier
+        # Add new experimental agents here
     ]
 
     variants = frontier + experimental
