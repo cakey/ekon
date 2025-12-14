@@ -26,6 +26,16 @@ When looking for new optimizations, ask:
   - If on frontier → SUCCESS, add to registry and frontier table
 - We don't care about profit alone or speed alone. Only the frontier matters.
 
+### When Finding New Frontier Points
+
+**MANDATORY:** When a new agent makes it onto the Pareto frontier:
+
+1. **Create agent file** in `agents/` directory with docstring documenting performance
+2. **Register in `agents/__init__.py`** with performance comment
+3. **Update `experiment.py`** frontier list (the `--frontier` variants array)
+4. **Update Current Frontier table** at top of this file
+5. **Document in new Iteration section** below with full results and learnings
+
 ---
 
 ## Current Frontier
@@ -36,7 +46,9 @@ When looking for new optimizations, ask:
 | zen_3 | $235 | 0.0020ms | 118,708 | |
 | **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** | **DOMINATES simple_global, zen_all, blitz, blitz_nas** |
 | **global_arb_plus** | **$4,230** | **0.0035ms** | **1,203,340** | **global_arb + 1-node leftover** |
-| **depth2_global** | **$7,577** | **0.0252ms** | **300,577** | **DOMINATES ENTIRE balanced+max tier!** |
+| **depth2_global** | **$8,161** | **0.0245ms** | **333,304** | **DOMINATES ENTIRE balanced+max tier!** |
+| **depth2_global_top4** | **$8,398** | **0.0353ms** | **237,774** | **More neighbors = more profit** |
+| **depth2_global_all** | **$9,017** | **0.0834ms** | **108,131** | **MAX PROFIT frontier point** |
 | simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
 | zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
@@ -49,7 +61,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by depth2_global |
 | champion_v8 | $7,184 | 0.148ms | 48,541 | dominated by depth2_global |
 
-*Updated after Iteration 31 (depth2_global agent)*
+*Updated after Iteration 32 (depth2_global variants)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -869,6 +881,55 @@ Combine depth-2 lookahead movement with global arbitrage buying.
 4. Best of both worlds: tactical movement + statistical arbitrage
 
 **Key Insight:** The entire balanced and max-profit tiers are now obsolete. One agent dominates everything from depth2_top2_nas through champion_v8.
+
+---
+
+## Iteration 32: Depth2 Global Tuning & Variants (3 NEW FRONTIER POINTS)
+
+Fine-tuning depth2_global and exploring neighbor count tradeoffs.
+
+### Sell Threshold Tuning
+
+Tested different sell threshold ranges (baseline was 65%→85%):
+
+| Config | $/round | ms/round | Efficiency |
+|--------|---------|----------|------------|
+| s65→85 (baseline) | $7,577 | 0.0252ms | 300,577 |
+| **s60→90** | **$8,161** | **0.0245ms** | **333,304** |
+| s55→95 | $8,037 | 0.0246ms | 326,748 |
+| s50→90 | $7,974 | 0.0245ms | 325,469 |
+
+**Learning:** Wider threshold range (60%→90%) is optimal. Sell more aggressively when poor, hold longer when rich.
+
+### Neighbor Count Exploration
+
+The original depth2_global uses top-2 neighbors at depth 2. Tested ALL neighbors:
+
+| Config | $/round | ms/round | Efficiency |
+|--------|---------|----------|------------|
+| top-2 (s60→90) | $8,161 | 0.0245ms | 333,304 |
+| **top-4** | **$8,398** | **0.0353ms** | **237,774** |
+| **ALL** | **$9,017** | **0.0834ms** | **108,131** |
+
+**Key Insight:** More neighbors = more profit at cost of speed. Both top-4 and ALL are on the Pareto frontier!
+
+### What DIDN'T Work
+
+**Depth-3 lookahead:** Slower AND less profitable than depth-2.
+| Config | $/round | ms/round |
+|--------|---------|----------|
+| depth-2 | $7,771 | 0.025ms |
+| depth-3 | $7,239 | 0.051ms |
+
+**Inventory-aware pathing:** HURT performance significantly ($4,014 vs $7,771).
+
+**NAS on global_arb agents:** Global threshold already handles selling well, NAS adds overhead without benefit.
+
+### New Frontier Agents Created
+
+1. **depth2_global** (updated): $8,161/r @ 0.0245ms - sell threshold 60%→90%
+2. **depth2_global_top4**: $8,398/r @ 0.0353ms - top-4 neighbors at depth 2
+3. **depth2_global_all**: $9,017/r @ 0.0834ms - ALL neighbors at depth 2 (MAX PROFIT)
 
 ---
 

@@ -221,6 +221,8 @@ See EXPERIMENTS.md for full methodology.
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
             (agent_registry.agents["global_arb_plus"], "global_arb+"), # fast+
             (agent_registry.agents["depth2_global"], "depth2_global"), # dominates all champions!
+            (agent_registry.agents["depth2_global_top4"], "depth2_global_top4"),  # more neighbors = more profit
+            (agent_registry.agents["depth2_global_all"], "depth2_global_all"),    # max profit frontier
         ]
         print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
 

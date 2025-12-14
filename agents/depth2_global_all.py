@@ -1,26 +1,19 @@
 """
-Depth2 Global Agent - depth2 lookahead + global arb with leftover cash
+Depth2 Global All - depth2 with ALL neighbors + global arb
 
 === EXPERIMENT FINDINGS ===
 
-Iteration 31: Combine depth-2 lookahead with global arbitrage.
+Iteration 32: Check ALL neighbors for maximum profit.
 
-Strategy:
-1. Depth-2 lookahead for movement (find best immediate profit path)
-2. Buy items profitable at next node
-3. With leftover cash, buy items cheap relative to global max
-4. Sell at global threshold
-
-Cash-adaptive thresholds:
-- Sell: 60% (poor) → 90% (rich) of global max
-- Global arb buy: ≤80% of global max
+Strategy: Same as depth2_global but check ALL neighbors (no pruning).
+Slower but highest profit.
 
 === PERFORMANCE ===
-- $/round:    +$8,161
-- ms/round:   0.0245ms
-- Efficiency: 333,304
+- $/round:    +$9,017
+- ms/round:   0.0834ms
+- Efficiency: 108,131
 
-DOMINATES: depth2_top2_nas, adaptive, champion_v1, champion_v6, champion_v8
+Max profit frontier point.
 """
 
 import random
@@ -36,7 +29,6 @@ def agent(ws, state, *a, **k):
     my_node = world[pos]
     my_shop = my_node['resources']
 
-    # Precompute global prices once
     if 'global_buy' not in state:
         global_buy = {}
         for node in world.values():
@@ -47,7 +39,6 @@ def agent(ws, state, *a, **k):
 
     global_buy = state['global_buy']
 
-    # Last round: sell everything
     if meta['current_round'] == meta['total_rounds'] - 1:
         return {
             'resources_to_sell_to_shop': {r: q for r, q in my_res.items() if r in my_shop and q > 0},
@@ -59,7 +50,6 @@ def agent(ws, state, *a, **k):
     if not neighbors:
         return {'resources_to_sell_to_shop': {}, 'resources_to_buy_from_shop': {}, 'move': pos}
 
-    # Score edge by immediate profit potential
     def score_edge(from_pos, to_pos):
         from_shop = world[from_pos]['resources']
         to_shop = world[to_pos]['resources']
@@ -72,12 +62,12 @@ def agent(ws, state, *a, **k):
                     score += (to_info['buy'] - price) * qty
         return score
 
-    # Top-2 depth-2 lookahead
+    # ALL neighbors depth-2 lookahead
     scored = []
     for n1 in neighbors:
-        n1_neighbors = list(world[n1]['neighbours'].keys())
+        n1_neighbors = list(world[n1]['neighbours'].keys())  # ALL neighbors
         best_n2_score = 0
-        for n2 in n1_neighbors[:2]:
+        for n2 in n1_neighbors:
             best_n2_score = max(best_n2_score, score_edge(n1, n2))
         total = score_edge(pos, n1) + 0.9 * best_n2_score
         scored.append((total, n1))
@@ -86,7 +76,6 @@ def agent(ws, state, *a, **k):
     best_neighbor = scored[0][1] if scored else random.choice(neighbors)
     next_shop = world[best_neighbor]['resources']
 
-    # Cash-adaptive sell threshold
     if coin < 500:
         sell_thresh = 0.60
     elif coin > 10000:
@@ -95,7 +84,6 @@ def agent(ws, state, *a, **k):
         t = (coin - 500) / 9500
         sell_thresh = 0.60 + 0.30 * t
 
-    # SELL at expensive nodes
     sells = {}
     for res, qty in my_res.items():
         if qty > 0 and res in my_shop:
@@ -108,7 +96,6 @@ def agent(ws, state, *a, **k):
     buys = {}
     budget = coin
 
-    # PHASE 1: Standard depth-2 buys (profitable at next node)
     trades = []
     for res, info in my_shop.items():
         qty, price = info['quantity'], info['sell']
@@ -127,7 +114,6 @@ def agent(ws, state, *a, **k):
             buys[res] = buys.get(res, 0) + amt
             budget -= amt * price
 
-    # PHASE 2: Leftover cash -> global arb buys (cheap relative to global)
     if budget > 0:
         buy_thresh = 0.80
         for res, info in my_shop.items():
