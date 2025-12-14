@@ -218,6 +218,7 @@ See EXPERIMENTS.md for full methodology.
         variants = [
             (agent_registry.agents["zen"], "zen"),                    # ultra-fast
             (agent_registry.agents["zen_3"], "zen_3"),                # ultra-fast
+            (agent_registry.agents["global_arb_fast"], "global_arb_fast"),  # fills zen_3→global_arb gap
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
             (agent_registry.agents["global_arb_plus"], "global_arb+"), # fast+
             (agent_registry.agents["hybrid_edge"], "hybrid_edge"),    # fills gap

@@ -8,6 +8,7 @@ from . import simple_random
 from . import simple_global
 from . import hybrid_greedy
 from . import global_arb
+from . import global_arb_fast
 from . import global_arb_plus
 from . import depth2_global
 from . import depth2_global_top4
@@ -28,6 +29,7 @@ agents = {
     # Ultra-fast tier (0.001-0.005ms)
     "zen": zen.agent,                       # $117/r @ 0.0016ms
     "zen_3": zen_variants.zen_3,            # $235/r @ 0.0020ms
+    "global_arb_fast": global_arb_fast.agent,  # $3,849/r @ 0.0026ms (fixed thresholds, fills zen_3→global_arb gap)
     "global_arb": global_arb.agent,         # $4,050/r @ 0.0030ms (DOMINATES simple_global, zen_all, blitz, blitz_nas)
     "global_arb_plus": global_arb_plus.agent,  # $4,230/r @ 0.0035ms (global_arb + 1-node leftover)
     "simple_global": simple_global.agent,   # $2,011/r @ 0.0029ms (dominated by global_arb)
