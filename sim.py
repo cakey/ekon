@@ -17,7 +17,9 @@ starting_quantity = [10,1000]
 node_count = 400
 edge_ratio = 0.02
 resource_names = ["GOLD", "SILVER", "NANOCHIPS", "CAKE", "AZURE_INSTANCES"]
-mine_rate = [10,80]
+# Note: mine_rate was considered but intentionally not implemented.
+# Without replenishment, quantities deplete permanently which creates
+# interesting scarcity dynamics and makes quantity-aware scoring matter.
 
 def build_graph(node_count, edge_ratio):
 
