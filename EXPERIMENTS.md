@@ -43,11 +43,11 @@ When looking for new optimizations, ask:
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
 | depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
 | adaptive | $4,995 | 0.0495ms | 100,909 | |
-| champion_v1 | $5,105 | 0.0516ms | 98,934 | balanced-fast |
-| champion_v6 | $6,723 | 0.076ms | 88,461 | balanced (dominates v5) |
-| champion_v3 | $6,832 | 0.156ms | 43,795 | max profit |
+| champion_v1 | $5,082 | 0.0472ms | 107,567 | balanced-fast |
+| champion_v6 | $6,775 | 0.073ms | 93,349 | balanced (dominates v5) |
+| **champion_v7** | **$6,996** | **0.148ms** | **47,320** | **max profit (dominates v3)** |
 
-*Updated after Iteration 22 (profile-guided optimization)*
+*Updated after Iteration 24 (global-aware buy/sell)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -589,6 +589,43 @@ Tested several advanced algorithmic approaches. None beat hand-tuned agents.
 **Key Insight:** Environment is fully observable and deterministic. Greedy approaches work well. Exotic algorithms add overhead without finding hidden value.
 
 **Numba/Cython:** Not tested (numba not installed). Could still provide speedup via compilation.
+
+---
+
+## Iteration 24: Global-Aware Buy/Sell (FRONTIER SUCCESS)
+
+Applied global price awareness to BOTH buying and selling decisions.
+
+**Hypothesis:** Use price relative to global max to determine sell/buy strategy.
+
+**Strategies tested:**
+
+| Approach | Result vs v6 | Notes |
+|----------|--------------|-------|
+| adaptive_discount (d varies by opportunity) | -$73/r | Discount tuning doesn't help |
+| adaptive_sell (95%/75% thresholds) | +$156/r | Adaptive threshold beats fixed |
+| adaptive_depth (depth-3 when weak) | +$11/r | Minor improvement |
+| full_adaptive (all combined) | +$88/r | Combination loses vs individual |
+| **global_buy_sell** | **+$245/r** | **Weight buying by closeness to global max** |
+
+**Final Configuration (champion_v7):**
+1. SELL: At 95%+ of global max unconditionally, or 75%+ if dest is worse
+2. BUY: Weight by `margin * closeness` where closeness = buy_price / global_max
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| champion_v6 | $6,775 | 0.073ms | 93,349 |
+| **champion_v7** | **$6,996** | **0.148ms** | **47,320** |
+
+**Pareto Analysis:**
+- v7 dominates v3 (higher profit AND similar speed)
+- v7 on frontier (highest profit, medium speed)
+
+**Key Insight:** Global price awareness helps both directions:
+- Selling: Wait for near-optimal prices, but don't miss good opportunities
+- Buying: Prioritize resources we can resell at premium prices
 
 ---
 
