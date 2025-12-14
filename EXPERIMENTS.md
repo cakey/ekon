@@ -34,11 +34,12 @@ When looking for new optimizations, ask:
 |-------|---------|----------|------------|----------|
 | zen | $117 | 0.0016ms | 72,273 | ultra-fast |
 | zen_3 | $235 | 0.0020ms | 118,708 | |
-| **simple_global** | **$2,011** | **0.0029ms** | **689,137** | **dominates simple_random, zen_8** |
-| zen_all | $2,710 | 0.0074ms | 363,860 | |
-| **hybrid_greedy** | **$2,761** | **0.0077ms** | **358,634** | **greedy movement + global selling** |
-| blitz | $3,622 | 0.0082ms | 439,690 | fast |
-| champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
+| **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** | **DOMINATES simple_global, zen_all, blitz, blitz_nas** |
+| simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
+| zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
+| hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
+| blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
+| champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | dominated by global_arb |
 | depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
 | adaptive | $4,995 | 0.0495ms | 100,909 | |
 | champion_v1 | $5,082 | 0.0472ms | 107,567 | balanced-fast |
@@ -46,7 +47,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
 | **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 28 (hybrid_greedy agent)*
+*Updated after Iteration 29 (global_arb agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -746,6 +747,57 @@ Combining greedy movement (like blitz) with precomputed global selling.
 - Conclusion: Buy everything profitable, no filtering needed
 
 **Key Insight:** Greedy movement helps marginally over random, but the real gains come from global-aware selling. Buy thresholds hurt because they miss profitable opportunities - volume of small trades matters.
+
+---
+
+## Iteration 29: Global Arbitrage (FRONTIER SUCCESS - MASSIVE)
+
+Pure buy-low-sell-high based on global price ratios. No neighbor lookahead.
+
+**Core insight from user:** "If I buy stuff that is super cheap globally, and sell when the node is super expensive globally, then on average I'm going to make great profit."
+
+**Strategy:**
+- Buy when current node's sell price <= X% of global max buy price (it's cheap here)
+- Sell when current node's buy price >= Y% of global max buy price (it's expensive here)
+- Move randomly - over time you encounter both cheap and expensive nodes
+- Cash-adaptive thresholds for liquidity management
+
+**Cash-adaptive thresholds:**
+- Poor ($<500): buy at <=85% of global, sell at >=65% of global (looser, need turnover)
+- Rich ($>10000): buy at <=75% of global, sell at >=85% of global (tighter, wait for deals)
+
+**Threshold tuning:**
+
+| Config | $/round | ms/round | Efficiency |
+|--------|---------|----------|------------|
+| buy≤90% sell≥60% | $2,372 | 0.0032ms | 741,250 |
+| buy≤80% sell≥70% | $3,631 | 0.0030ms | 1,210,333 |
+| buy≤80% sell≥75% | $3,819 | 0.0029ms | 1,316,897 |
+| **b85→75 s65→85** | **$4,050** | **0.0030ms** | **1,343,195** |
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| simple_global | $2,028 | 0.0030ms | 676,000 |
+| blitz | $3,569 | 0.0077ms | 463,377 |
+| **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** |
+
+**Pareto Analysis - DOMINATES:**
+- simple_global (same speed, 2x profit!)
+- zen_all (faster AND more profit)
+- hybrid_greedy (faster AND more profit)
+- blitz (faster AND more profit)
+- blitz_nas (faster AND more profit)
+
+**Why this works:**
+1. Global prices are static - precompute once, use forever
+2. No need to look at neighbors - trust statistical arbitrage over 200 rounds
+3. Buy low, sell high is the fundamental trading principle
+4. Cash-adaptive thresholds optimize for liquidity constraints
+5. Random movement is sufficient because you WILL encounter price variations
+
+**Key Insight:** The simplest strategy (buy cheap, sell expensive, move randomly) beats all the sophisticated neighbor-scoring approaches in the fast tier. Complexity was solving the wrong problem.
 
 ---
 
