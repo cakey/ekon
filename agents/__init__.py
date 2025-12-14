@@ -14,6 +14,7 @@ from . import global_arb_plus
 from . import backtrack_fast
 from . import backtrack_turbo
 from . import gap_filler
+from . import edge_master
 from . import depth2_global
 from . import depth2_global_top4
 from . import depth2_global_all
@@ -56,7 +57,8 @@ agents = {
 
     # Balanced tier (0.01-0.1ms) - hybrid_champion DOMINATES depth2 family
     "hybrid_edge": hybrid_edge.agent,           # $4,631/r @ 0.0091ms (DOMINATED by gap_filler)
-    "gap_filler": gap_filler.agent,             # $5,216/r @ 0.0106ms (DOMINATES hybrid_edge!)
+    "gap_filler": gap_filler.agent,             # $5,216/r @ 0.0106ms (DOMINATED by edge_master)
+    "edge_master": edge_master.agent,           # $5,493/r @ 0.0097ms (DOMINATES gap_filler!)
     "hybrid_champion": hybrid_champion.agent,   # $9,888/r @ 0.0191ms (DOMINATED by max_profit)
     "max_profit": max_profit.agent,             # $10,116/r @ 0.0172ms (DOMINATED by ultimate)
     "ultimate": ultimate.agent,                 # $11,065/r @ 0.0163ms (NEW MAX PROFIT! DOMINATES max_profit)

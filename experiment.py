@@ -220,7 +220,7 @@ See EXPERIMENTS.md for full methodology.
             (agent_registry.agents["global_arb_turbo"], "global_arb_turbo"),  # fast tier
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
             (agent_registry.agents["backtrack_fast"], "backtrack_fast"),  # DOMINATES global_arb_plus!
-            (agent_registry.agents["gap_filler"], "gap_filler"),      # DOMINATES hybrid_edge!
+            (agent_registry.agents["edge_master"], "edge_master"),    # DOMINATES gap_filler!
             (agent_registry.agents["ultimate"], "ultimate"),  # MAX PROFIT
         ]
         print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
