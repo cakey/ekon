@@ -7,6 +7,7 @@ from . import lookahead
 from . import champion_v1
 from . import champion_v2
 from . import champion_v3
+from . import champion_v4
 
 # See EXPERIMENTS.md for full hypothesis testing results
 
@@ -23,6 +24,7 @@ agents = {
 
   # Champions (experiment winners)
   "champion_v1": champion_v1.agent,  # $5,052/r @ 0.057ms (depth2 top4)
-  "champion_v2": champion_v2.agent,  # $6,241/r @ 0.094ms (depth2 ALL, no cap)
-  "champion_v3": champion_v3.agent,  # $6,857/r @ 0.17ms (+ sell threshold 0.75)
+  "champion_v2": champion_v2.agent,  # $6,298/r @ 0.086ms (BEST EFFICIENCY: 73,398)
+  "champion_v3": champion_v3.agent,  # $6,875/r @ 0.161ms (max profit, -42% eff vs v2)
+  "champion_v4": champion_v4.agent,  # $6,284/r @ 0.118ms (REGRESSION - worse than v2)
 }

@@ -177,15 +177,33 @@ def run_experiment(agent_func, name, num_runs=20, seeds=None):
 def main():
     # Import agents to compare
     from agents import champion_v1, champion_v2, champion_v3, blitz, lookahead
+    from agents import experimental_v4 as v4
 
-    # Define variants to test
-    variants = [
-        (blitz.agent, "blitz"),
-        (lookahead.agent, "lookahead"),
-        (champion_v1.agent, "champion_v1"),
-        (champion_v2.agent, "champion_v2"),
-        (champion_v3.agent, "champion_v3"),
+    # ==========================================================================
+    # PARETO FRONTIER AGENTS - always include these as baselines
+    # See EXPERIMENTS.md "Experimental Methodology" for validation rules
+    # ==========================================================================
+    frontier = [
+        (blitz.agent, "blitz"),           # fastest
+        (champion_v1.agent, "v1"),         # balanced-fast
+        (champion_v2.agent, "v2"),         # balanced (BEST EFFICIENCY)
+        (champion_v3.agent, "v3"),         # max profit
     ]
+
+    # ==========================================================================
+    # EXPERIMENTAL AGENTS - add new agents here to test against frontier
+    # After testing: if dominated by any frontier agent, remove it
+    #
+    # Original agents tested - all dominated by blitz:
+    #   pirate_of_cakey: $3,485/r @ 0.009ms (blitz: $3,588/r @ 0.007ms)
+    #   east_india: $813/r @ 0.027ms
+    #   rockeffeler: $300/r @ 0.015ms
+    # ==========================================================================
+    experimental = [
+        # Add new agents here to test against frontier
+    ]
+
+    variants = frontier + experimental
 
     num_runs = 30
     if len(sys.argv) > 1:
@@ -198,10 +216,12 @@ def main():
     print(f"{'Variant':<20} {'$/round':>10} {'ms/round':>10} {'Efficiency':>12} {'Δ$/r':>10}")
     print("=" * 80)
 
+    results = []
     baseline_result = None
 
     for agent_func, name in variants:
         result = run_experiment(agent_func, name, num_runs, seeds)
+        results.append(result)
 
         if baseline_result is None:
             baseline_result = result
@@ -212,6 +232,38 @@ def main():
         print(f"{name:<20} {result['ppr']:>+10.1f} {result['tpr']:>10.4f} {result['efficiency']:>12.1f} {delta:>10}")
 
     print("=" * 80)
+
+    # Pareto dominance check
+    print("\n--- Pareto Frontier Analysis ---")
+
+    # Check each agent for dominance
+    frontier_agents = []
+    dominated_agents = []
+
+    for i, r in enumerate(results):
+        dominated_by = None
+        for j, other in enumerate(results):
+            if i == j:
+                continue
+            # other dominates r if: other has >= profit AND <= time (with at least one strict)
+            if other['ppr'] >= r['ppr'] and other['tpr'] <= r['tpr']:
+                if other['ppr'] > r['ppr'] or other['tpr'] < r['tpr']:
+                    dominated_by = other['name']
+                    break
+
+        if dominated_by:
+            dominated_agents.append((r['name'], dominated_by))
+        else:
+            frontier_agents.append(r['name'])
+
+    print(f"Frontier: {', '.join(frontier_agents)}")
+    if dominated_agents:
+        print("Dominated (should discard):")
+        for agent, dominator in dominated_agents:
+            print(f"  - {agent} dominated by {dominator}")
+    else:
+        print("No dominated agents.")
+
     print("\nRecord results in EXPERIMENTS.md")
 
 

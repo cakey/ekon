@@ -4,15 +4,81 @@ This document tracks hypotheses tested, results, and learnings to avoid repeatin
 
 ---
 
-## Current Best: champion_v3
+## Experimental Methodology
 
-| Metric | Value |
-|--------|-------|
-| $/round | +$6,857 |
-| ms/round | 0.17ms |
-| Efficiency | 40,335 $/r/ms |
+### Pareto Frontier Validation
 
-**Config:** depth-2 lookahead, ALL neighbors, no quantity cap, sell_threshold=0.75
+When testing a new agent, compare against **all frontier agents**, not just the most recent. An agent is valid if it's on the Pareto frontier - meaning no other agent strictly dominates it on ALL metrics.
+
+**Current Frontier Agents:**
+| Agent | $/round | ms/round | Efficiency | Position |
+|-------|---------|----------|------------|----------|
+| blitz | $3,570 | 0.008ms | 460,975 | fastest |
+| v1 | $5,052 | 0.057ms | 88,632 | balanced-fast |
+| v2 | $6,298 | 0.086ms | 73,398 | balanced |
+| v3 | $6,875 | 0.161ms | 42,774 | max profit |
+
+**Validation Rules:**
+1. New agent beats at least one frontier agent on at least one metric
+2. New agent is NOT strictly dominated (worse on ALL metrics) by any frontier agent
+3. If dominated → discard. If on frontier → keep as new option.
+
+**Example:**
+- v4 ($6,284/r @ 0.118ms) is dominated by v2 ($6,298/r @ 0.086ms) → DISCARD
+- v3 ($6,875/r @ 0.161ms) is not dominated by v2 (more profit) → KEEP
+
+### Experiment Design Process
+
+1. **Identify target**: Which part of the frontier are we trying to improve?
+   - More profit than v3? (push right)
+   - Faster than blitz? (push left)
+   - Better efficiency in the middle? (push up)
+
+2. **Form hypothesis**: What change might achieve this?
+
+3. **Test idea against EACH frontier agent**: Don't just test one variant - apply the idea incrementally to each frontier agent:
+   - blitz + idea
+   - v1 + idea
+   - v2 + idea
+   - v3 + idea
+
+4. **Analyze results across all variants**:
+   - Did the idea help all agents? Some? None?
+   - WHY did it help/hurt in each case?
+   - This builds understanding of what the idea actually does
+
+5. **Evaluate position**:
+   - On frontier? → New valid option
+   - Dominated? → Discard, document why it failed
+
+6. **Update frontier**: Add successful agents, remove any now-dominated agents
+
+### Why Test Against Each Frontier Agent?
+
+Testing an idea against only one baseline can mislead:
+- Idea X might help v2 but hurt blitz
+- Without testing both, we'd wrongly conclude "X is good" or "X is bad"
+- Testing all reveals: "X helps slower agents but hurts fast ones" → real insight
+
+**Example (sell_threshold=0.75):**
+- On v2: Added $577/r but cost 0.075ms → created v3, worse efficiency
+- Should have also tested: blitz+threshold, v1+threshold
+- Might have revealed: threshold only helps when you have depth-2 lookahead
+
+---
+
+## Current Best: champion_v2 (by efficiency)
+
+| Metric | v2 (efficient) | v3 (max profit) |
+|--------|----------------|-----------------|
+| $/round | +$6,298 | +$6,875 |
+| ms/round | 0.086ms | 0.161ms |
+| Efficiency | **73,398** | 42,774 |
+
+**v2 Config:** depth-2 lookahead, ALL neighbors, no quantity cap
+**v3 Config:** + sell_threshold=0.75 (adds $577/r but costs 0.075ms)
+
+**Note:** v3 trades efficiency for profit. v4 attempted to recover efficiency but ended up worse than v2 on both metrics. See "V4 Summary" for details.
 
 ---
 
@@ -180,24 +246,130 @@ If we HOLD items until we reach a good price, we can capture more value.
 
 ---
 
+## Iteration 4: Efficiency Optimization
+
+Built on champion_v3 ($6,857/r @ 0.17ms, eff=40,335)
+
+**Goal:** Improve $/round/ms efficiency. Blitz is 12x more efficient - can we get champion profits at better speed?
+
+### Approach 1: Blitz + Sell Threshold
+**Hypothesis:** Combine fastest agent (blitz) with best finding (sell_threshold=0.75)
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| blitz | $3,585 | 0.007ms | 501,036 | baseline |
+| blitz+threshold | $3,684 | 0.079ms | 46,440 | WORSE efficiency |
+
+**Learning:** Sell threshold hurts blitz! It needs depth-2 lookahead to find good sell locations. Without it, holding items just means missing immediate sales.
+
+### Approach 2: Depth 1 + Sell Threshold
+**Hypothesis:** Maybe depth 2 isn't needed if we have global price awareness.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| depth1+threshold | $3,293 | 0.080ms | 41,326 | WORSE than blitz! |
+
+**Learning:** Depth 1 is NOT enough. The sell threshold requires depth-2 to work - you need to see WHERE to go to sell high.
+
+### Approach 3: Adaptive Depth
+**Hypothesis:** Use depth 1 when profit is obvious (>5000), depth 2 only when unclear.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| adaptive (thresh=5000) | **$6,423** | **0.118ms** | **54,400** | **+32% efficiency!** |
+
+**Learning:** BEST EFFICIENCY! Only 1.5% less profit than champion_v3, but 26% faster. The adaptive approach correctly skips depth-2 when not needed.
+
+### Approach 4: Early Termination
+**Hypothesis:** Stop searching once profit >= 8000 threshold.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| early_term (8000) | $1,293 | 0.090ms | 14,370 | **DISASTER** |
+
+**Learning:** Threshold 8000 is WAY too aggressive. Terminates too early, picks bad paths. Need much lower threshold or don't use at all.
+
+### Approach 5: No-Sort Single Pass
+**Hypothesis:** Sorting is expensive. Track best without sorting.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| no_sort | $6,508 | 0.149ms | 43,726 | Marginal improvement |
+
+**Learning:** Only +6.6% efficiency over champion_v3. Not worth the complexity.
+
+### Approach 6: sqrt(qty) Scoring
+**Hypothesis:** margin × qty overweights high-quantity items.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| sqrt_scoring | $6,413 | 0.153ms | 42,027 | No improvement |
+
+**Learning:** Standard margin × qty scoring is correct. Don't change it.
+
+### Approach 7: Margin-only Scoring
+**Hypothesis:** Quantity doesn't matter for direction choice.
+| Config | $/round | ms/round | Efficiency | Verdict |
+|--------|---------|----------|------------|---------|
+| margin_only | $5,591 | 0.146ms | 38,344 | HURTS profit |
+
+**Learning:** Quantity matters! Ignoring it costs ~$1,000/round.
+
+### Adaptive Threshold Tuning
+
+Fine-grained testing of adaptive depth thresholds (50 runs each):
+
+| Threshold | $/round | ms/round | Efficiency |
+|-----------|---------|----------|------------|
+| 1000 | $5,453 | 0.117ms | 46,557 |
+| 1500 | $5,675 | 0.117ms | 48,366 |
+| 2000 | $5,832 | 0.120ms | 48,638 |
+| 2500 | $5,910 | 0.122ms | 48,516 |
+| 3000 | $6,001 | 0.125ms | 48,119 |
+| **4000** | **$6,192** | **0.127ms** | **48,703** |
+| champion_v3 | $6,568 | 0.172ms | 38,149 |
+
+**Learning:** Efficiency plateau 48,000-49,000 from threshold 1500-4000. Within plateau, 4000 gives best profit. +27% efficiency over champion_v3.
+
+### V4 Summary
+
+**MISTAKE: Used wrong baseline!**
+
+v4 was declared "winner" over v3, but v3 itself was an efficiency regression:
+
+| Version | $/round | ms/round | Efficiency |
+|---------|---------|----------|------------|
+| champion_v2 | $6,298 | 0.086ms | **73,398** |
+| champion_v3 | $6,875 | 0.161ms | 42,774 |
+| champion_v4 | $6,284 | 0.118ms | 53,063 |
+
+**v4 is strictly worse than v2** - less profit AND slower.
+
+The sell_threshold feature (v3) adds ~$577/round profit but costs 0.075ms extra. That's only 7,693 $/ms efficiency for the feature itself - far below v2's 73,398 overall efficiency.
+
+**Learning:** Always compare to the BEST previous version, not just the most recent. The sell_threshold may not be worth the computational cost.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
+- [x] ~~Adaptive depth~~ → Improves on v3 but still worse than v2
+- [x] ~~Early termination~~ → Threshold 8000 too aggressive, kills profit
+- [x] ~~Alternative scoring~~ → Standard margin×qty is correct
+- [x] ~~Tune adaptive threshold~~ → 4000 is optimal (tested 1000-10000)
 - [ ] Resource memory (track purchase price, ensure profit on sale)
 - [ ] Opponent modeling (avoid nodes where others are heading)
 - [ ] Price prediction (resources get depleted, prices might change)
 - [ ] Path caching (precompute common routes)
-- [ ] Smarter inventory management (don't hold too long, opportunity cost)
+- [ ] **Faster global price computation** - current impl iterates all nodes, maybe sample or cache?
+- [ ] **Beat v2** - need same profit + faster, OR more profit + same speed
 
 ---
 
 ## Version History
 
-| Version | $/round | ms/round | Key Changes |
-|---------|---------|----------|-------------|
-| blitz | $1,500 | 0.008ms | 1-step, fastest |
-| depth3 | $2,000 | 0.06ms | 3-step, top2 |
-| lookahead | $3,000 | 2ms | 4-step simulation |
-| champion_v1 | $5,052 | 0.057ms | depth2 top4 |
-| champion_v2 | $6,241 | 0.094ms | depth2 ALL, no cap |
-| champion_v3 | $6,857 | 0.17ms | + sell threshold 0.75 |
+| Version | $/round | ms/round | Efficiency | Key Changes |
+|---------|---------|----------|------------|-------------|
+| blitz | $3,570 | 0.008ms | 460,975 | 1-step, fastest |
+| lookahead | $3,000 | 2ms | 1,500 | 4-step simulation |
+| champion_v1 | $5,052 | 0.057ms | 88,632 | depth2 top4 |
+| **champion_v2** | **$6,298** | **0.086ms** | **73,398** | **depth2 ALL, no cap (BEST EFFICIENCY)** |
+| champion_v3 | $6,875 | 0.161ms | 42,774 | + sell threshold 0.75 (max profit, -42% eff) |
+| champion_v4 | $6,284 | 0.118ms | 53,063 | adaptive depth - REGRESSION from v2 |
+
+**Lesson learned:** v3→v4 was optimizing against wrong baseline. Always compare to best, not most recent.
