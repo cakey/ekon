@@ -42,26 +42,26 @@ When looking for new optimizations, ask:
 
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| zen | $100 | 0.0018ms | 55,779 | ultra-fast |
-| **global_arb_turbo** | **$2,053** | **0.0022ms** | **928,617** | **20x zen! Rotation, DOMINATES zen_3** |
-| **global_arb_fast** | **$3,912** | **0.0024ms** | **1,661,561** | **Fixed thresholds** |
-| **global_arb** | **$3,969** | **0.0028ms** | **1,416,904** | **DOMINATES simple_global, zen_all, blitz** |
+| zen | $110 | 0.0015ms | 72,000 | ultra-fast |
+| **global_arb_turbo** | **$1,801** | **0.0019ms** | **950,000** | **17x zen! Rotation** |
+| **global_arb** | **$3,991** | **0.0025ms** | **1,585,000** | **DOMINATES simple_global, zen_all, blitz** |
+| **backtrack_fast** | **$4,286** | **0.0029ms** | **1,465,000** | **DOMINATES global_arb_plus! Backtrack avoidance** |
+| **gap_filler** | **$5,216** | **0.0106ms** | **492,000** | **NEW! DOMINATES hybrid_edge** |
+| **ultimate** | **$11,431** | **0.0156ms** | **732,000** | **MAX PROFIT** |
+| ~~hybrid_edge~~ | $4,631 | 0.0091ms | 509,000 | dominated by gap_filler |
 | ~~global_arb_plus~~ | $4,218 | 0.0036ms | 1,184,633 | dominated by backtrack_fast |
-| **backtrack_fast** | **$4,321** | **0.0034ms** | **1,279,276** | **DOMINATES global_arb_plus! Backtrack avoidance** |
-| **hybrid_edge** | **$4,534** | **0.0109ms** | **414,632** | **Fills gap: global_arb+ → hybrid_champion** |
-| ~~hybrid_champion~~ | $9,888 | 0.0191ms | 517,696 | dominated by max_profit |
+| ~~hybrid_champion~~ | $9,888 | 0.0191ms | 517,696 | dominated by ultimate |
 | ~~max_profit~~ | $10,116 | 0.0172ms | 588,000 | dominated by ultimate |
-| **ultimate** | **$11,323** | **0.0161ms** | **703,000** | **NEW MAX PROFIT! DOMINATES max_profit** |
 | zen_3 | $225 | 0.0020ms | 113,842 | dominated by global_arb_turbo |
-| depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by hybrid_champion |
-| depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by hybrid_champion |
-| depth2_global_all | $9,621 | 0.0895ms | 107,506 | dominated by hybrid_champion |
+| depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by ultimate |
+| depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by ultimate |
+| depth2_global_all | $9,621 | 0.0895ms | 107,506 | dominated by ultimate |
 | simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
 | zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 
-*Updated after Iteration 36 (ultimate - DOMINATES max_profit)*
+*Updated after Iteration 37-41 (gap_filler - DOMINATES hybrid_edge)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -1243,6 +1243,93 @@ DOMINATES max_profit: +$1,325/r AND faster!
 2. **Novel ideas mostly fail**: Resource memory, UCB, momentum all hurt performance
 3. **More compute doesn't help**: Graph is too random for deep planning
 4. **Parameter tuning works**: Simple threshold changes beat complex algorithms
+
+---
+
+## Iteration 37-41: Gap Filler + Novel Structural Approaches
+
+Goal: Fill the frontier gap between backtrack_fast and ultimate, explore novel strategies.
+
+### World Mechanics Discovery
+
+Key insight from reading sim.py (lines 20-22):
+- **NO resource regeneration** - resources deplete permanently when bought
+- **Prices are FIXED** - buy/sell prices never change during the game
+- **Quantities deplete** - buying reduces shop quantity, selling increases it
+
+This explains why many ideas fail:
+- Staying at nodes is useless (nothing regenerates)
+- Price prediction is pointless (prices don't change)
+- Longer path memory hurts (revisiting depleted nodes is fine)
+
+### Iteration 37: Gap Filler Agent (NEW FRONTIER!)
+
+Created gap_filler to fill gap between backtrack_fast ($4,286 @ 0.0029ms) and hybrid_edge ($4,631 @ 0.0091ms).
+
+**Strategy:**
+- Edge-only scoring (simpler than hybrid)
+- Backtrack avoidance
+- Cash-adaptive sell threshold (70% → 95%)
+- Priority buying at next destination
+
+**Results:**
+| Agent | $/round | ms/round |
+|-------|---------|----------|
+| backtrack_fast | $4,286 | 0.0029ms |
+| hybrid_edge | $4,631 | 0.0091ms |
+| **gap_filler** | **$5,216** | **0.0106ms** |
+
+**DOMINATES hybrid_edge:** +13% profit, same speed tier.
+
+### Iteration 38-39: Threshold Tuning
+
+Verified that cash-adaptive sell threshold (70% → 95%) dominates fixed 85% threshold:
+- +$299/r profit
+- Slightly faster execution
+
+### Iteration 40-41: Novel Structural Approaches (ALL FAILED)
+
+Tested many structural ideas based on world mechanics understanding:
+
+| Approach | Result | Why Failed |
+|----------|--------|------------|
+| Hub seeking | -$8,689/r | Hub connectivity doesn't predict profit |
+| Path memory (last 5) | -$675/r | Longer memory hurts exploration |
+| Greedy hop to best seller | -$1,706/r | Greedy movement fails |
+| 2-hop arbitrage lookahead | -$1,913/r, 5x slower | Too much overhead |
+| Random walk + smart trading | -$7,511/r | Movement IS critical |
+| Stay at high-value nodes | -$11,392/r | Nothing regenerates! |
+| Inventory-driven movement | -$6,263/r | Prioritizing selling doesn't help |
+| Prefer unvisited nodes | +$42/r, slower | Marginal, dominated |
+| Time-adaptive thresholds | +$55/r | Marginal, noise |
+| Quantity-weighted scoring | $0/r | Ultimate already does this |
+
+### Key Learnings
+
+1. **Movement IS critical** - random walk loses $7,500/r compared to ultimate
+2. **No regeneration means staying is useless** - always move to find new inventory
+3. **Backtrack avoidance (just previous node) is optimal** - longer memory hurts
+4. **Edge scoring + global scoring + adaptive thresholds = winning combo**
+5. **Ultimate is hard to beat structurally** - needs fundamental new ideas
+
+### New Frontier Agent
+
+**gap_filler**: $5,216/r @ 0.0106ms
+- Edge-only movement scoring
+- Backtrack avoidance
+- Cash-adaptive sell threshold (70% → 95%)
+- DOMINATES hybrid_edge
+
+### Final Frontier (6 agents)
+
+| Agent | $/round | ms/round | Role |
+|-------|---------|----------|------|
+| zen | $110 | 0.0015ms | ultra-fast |
+| global_arb_turbo | $1,801 | 0.0019ms | fast tier |
+| global_arb | $3,991 | 0.0025ms | fast tier |
+| backtrack_fast | $4,286 | 0.0029ms | fast tier |
+| gap_filler | $5,216 | 0.0106ms | balanced |
+| ultimate | $11,431 | 0.0156ms | max profit |
 
 ---
 
