@@ -41,12 +41,13 @@ When looking for new optimizations, ask:
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
-| depth2_top2 | $4,472 | 0.0282ms | 158,582 | **NEW** |
-| champion_v1 | $5,093 | 0.0549ms | 92,846 | balanced-fast |
+| depth2_top2 | $4,590 | 0.0278ms | 165,108 | |
+| adaptive | $4,987 | 0.0384ms | 129,870 | **NEW** |
+| champion_v1 | $5,105 | 0.0516ms | 98,934 | balanced-fast |
 | champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
 | champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
 
-*Updated after Iteration 10*
+*Updated after Iteration 11*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -514,6 +515,29 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 
 ---
 
+## Iteration 11: Adaptive Early/Late Strategy (FRONTIER SUCCESS)
+
+**Inspiration:** Research into algorithmic trading, multi-armed bandits. Resources deplete over 200 rounds - strategy should adapt.
+
+**Hypothesis:** Early game has abundant resources (explore widely, buy aggressively). Late game has scarce resources (focus on best options).
+
+**Implementation:**
+- Rounds 0-100: Check top-4 neighbors, future discount 0.95
+- Rounds 100-200: Check top-2 neighbors, future discount 0.80
+
+**Results (50 runs):**
+| Agent | $/round | ms/round | Frontier? |
+|-------|---------|----------|-----------|
+| depth2_top2 | $4,590 | 0.0278ms | yes |
+| adaptive | $4,987 | 0.0384ms | **YES - NEW!** |
+| champion_v1 | $5,105 | 0.0516ms | yes |
+
+**ON FRONTIER:** +$397 over depth2_top2 for +10.6μs. Fills gap between depth2_top2 and v1.
+
+**Why it works:** Early exploration finds good routes when resources are plentiful. Late focus on best options avoids wasting time on depleted nodes.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
@@ -532,6 +556,10 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 - [x] ~~Optimize zen_all to match blitz~~ → Random exploration was the key (+$1,200/r!)
 - [x] ~~Add NAS to zen variants~~ → Mostly HURTS (see Iteration 8)
 - [ ] Hybrid: zen speed with depth-2 scoring (score without full lookahead?)
+- [x] ~~Early/late game adaptation~~ → WORKS! See Iteration 11
+- [ ] UCB exploration (upper confidence bound for node selection)
+- [ ] Route memory (remember profitable paths)
+- [ ] Momentum (continue in profitable direction)
 
 ---
 

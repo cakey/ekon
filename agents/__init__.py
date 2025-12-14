@@ -10,6 +10,7 @@ from . import champion_v3
 from . import champion_v5
 from . import champion_v5_blitz
 from . import depth2_top2
+from . import adaptive
 
 agents = {
     # Ultra-fast tier (0.001-0.005ms)
@@ -26,8 +27,9 @@ agents = {
     "blitz_nas": champion_v5_blitz.agent,   # $3,774/r @ 0.0084ms
 
     # Balanced tier (0.01-0.1ms)
-    "depth2_top2": depth2_top2.agent,       # $4,472/r @ 0.0282ms
-    "champion_v1": champion_v1.agent,       # $5,093/r @ 0.0549ms
+    "depth2_top2": depth2_top2.agent,       # $4,590/r @ 0.0278ms
+    "adaptive": adaptive.agent,             # $4,987/r @ 0.0384ms
+    "champion_v1": champion_v1.agent,       # $5,105/r @ 0.0516ms
     "champion_v5": champion_v5.agent,       # $6,668/r @ 0.0936ms (BEST efficiency)
 
     # Max profit tier (0.1ms+)

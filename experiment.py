@@ -218,11 +218,12 @@ See EXPERIMENTS.md for full methodology.
             (agent_registry.agents["zen"], "zen"),              # ultra-fast
             (agent_registry.agents["blitz_nas"], "blitz_nas"),  # fast
             (agent_registry.agents["depth2_top2"], "depth2_top2"),  # balanced-fast
+            (agent_registry.agents["adaptive"], "adaptive"),    # adaptive strategy
             (agent_registry.agents["champion_v1"], "v1"),       # balanced
             (agent_registry.agents["champion_v5"], "v5"),       # best efficiency
             (agent_registry.agents["champion_v3"], "v3"),       # max profit
         ]
-        print(f"Running {len(variants)} key frontier agents (use --all for all 13)...\n")
+        print(f"Running {len(variants)} key frontier agents (use --all for all 14)...\n")
 
     num_runs = args.runs
     seeds = [random.randint(0, 1000000) for _ in range(num_runs)]
