@@ -1,13 +1,12 @@
 """
-Experimental Agent v10 - Depth-2 with top-2 neighbors
+Experimental Agent v15 - Depth2 Top2 + NAS
 
-Goal: Fill the blitz→v1 gap ($3,774 → $5,093)
+Combine two proven techniques:
+- depth2_top2: fast depth-2 lookahead (fills blitz→v1 gap)
+- NAS: neighbor-aware selling (helped blitz by +$212)
 
-v1: depth-2, top-4 neighbors = 16 edge scores
-v10: depth-2, top-2 neighbors = 4 edge scores (4x faster)
-
-Expected: ~$4,000-4,500/r at ~0.015-0.025ms
-Must check: Is it on the Pareto frontier? (not dominated by blitz or v1)
+NAS helped blitz because both are depth-1 style.
+depth2_top2 is depth-2 - might interact differently.
 """
 
 import random
@@ -33,14 +32,8 @@ def agent(world_state, *args, **kwargs):
             'move': pos
         }
 
-    # Sell all inventory
-    sells = {}
-    for res, qty in my_res.items():
-        if qty > 0 and res in my_shop:
-            sells[res] = qty
-            coin += qty * my_shop[res]['buy']
-
     if not neighbors:
+        sells = {r: q for r, q in my_res.items() if r in my_shop and q > 0}
         return {'resources_to_sell_to_shop': sells, 'resources_to_buy_from_shop': {}, 'move': pos}
 
     def score_edge(from_pos, to_pos):
@@ -53,7 +46,7 @@ def agent(world_state, *args, **kwargs):
             if qty > 0 and price > 0:
                 to_info = to_shop.get(res)
                 if to_info and to_info['buy'] > price:
-                    score += (to_info['buy'] - price) * qty  # No qty cap
+                    score += (to_info['buy'] - price) * qty
         return score
 
     def get_top_neighbors(from_pos, n=2):
@@ -65,7 +58,7 @@ def agent(world_state, *args, **kwargs):
         scored.sort(key=lambda x: x[1], reverse=True)
         return [nb for nb, _ in scored[:n]]
 
-    # 2-step lookahead with top-2 neighbors
+    # 2-step lookahead with top-2 neighbors (from depth2_top2)
     best_n1 = None
     best_score = -1
 
@@ -78,11 +71,22 @@ def agent(world_state, *args, **kwargs):
             best_score = total
             best_n1 = n1
 
-    # Random exploration if no opportunity
     if not best_n1:
         best_n1 = _r(neighbors) if neighbors else pos
 
-    # Buy profitable resources for chosen destination
+    # NAS: Only sell if destination doesn't pay more
+    dest_shop = world[best_n1]['resources']
+    sells = {}
+    for res, qty in my_res.items():
+        if qty > 0 and res in my_shop:
+            current_price = my_shop[res]['buy']
+            dest_info = dest_shop.get(res)
+            dest_price = dest_info['buy'] if dest_info else 0
+            if current_price >= dest_price:
+                sells[res] = qty
+                coin += qty * current_price
+
+    # Buy profitable resources
     next_shop = world[best_n1]['resources']
     trades = []
 

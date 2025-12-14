@@ -41,8 +41,8 @@ When looking for new optimizations, ask:
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
-| depth2_top2 | $4,590 | 0.0278ms | 165,108 | |
-| adaptive | $4,987 | 0.0384ms | 129,870 | **NEW** |
+| depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
+| adaptive | $4,995 | 0.0495ms | 100,909 | |
 | champion_v1 | $5,105 | 0.0516ms | 98,934 | balanced-fast |
 | champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
 | champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
