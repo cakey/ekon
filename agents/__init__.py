@@ -12,6 +12,7 @@ from . import champion_v5
 from . import champion_v5_blitz
 from . import zen
 from . import experimental_v6
+from . import experimental_v8
 
 # See EXPERIMENTS.md for full hypothesis testing results
 
@@ -42,4 +43,13 @@ agents = {
   "zen_6": experimental_v6.zen_6,
   "zen_8": experimental_v6.zen_8,
   "zen_all": experimental_v6.zen_all,
+
+  # Experimental v8 - zen + NAS variants
+  "zen_nas_2": experimental_v8.zen_nas_2,
+  "zen_nas_3": experimental_v8.zen_nas_3,
+  "zen_nas_4": experimental_v8.zen_nas_4,
+  "zen_nas_5": experimental_v8.zen_nas_5,
+  "zen_nas_6": experimental_v8.zen_nas_6,
+  "zen_nas_8": experimental_v8.zen_nas_8,
+  "zen_nas_all": experimental_v8.zen_nas_all,
 }

@@ -442,6 +442,33 @@ Tested on ALL frontier agents per methodology:
 
 ---
 
+## Iteration 8: NAS on Zen Variants (FAILED)
+
+**Hypothesis:** NAS helped blitz (+$212). Zen variants have similar structure, should benefit too.
+
+**Prediction:** Each zen variant gains $100-300/r with minimal time increase.
+
+**Results:**
+| Variant | zen | zen_nas | Δ | Verdict |
+|---------|-----|---------|---|---------|
+| 2 | $104 | $92 | -$12 | HURTS |
+| 3 | $229 | $201 | -$28 | HURTS |
+| 4 | $454 | $410 | -$44 | HURTS |
+| 5 | $739 | $808 | +$69 | helps |
+| 6 | $1273 | $1166 | -$107 | HURTS |
+| 8 | $1807 | $1652 | -$155 | HURTS |
+| all | $2524 | $2607 | +$83 | helps |
+
+**Analysis:** Prediction was WRONG. NAS hurts most zen variants.
+
+Why? Zen evaluates neighbors using original coin (before selling). NAS holds items → less coin to buy with, but neighbor choice was already made assuming full sell. The decision sequence is wrong for NAS.
+
+Blitz works differently - it factors actual coin during neighbor evaluation.
+
+**Lesson:** Same idea (NAS) can help one architecture (blitz) and hurt another (zen) depending on decision sequence. Must understand HOW an agent evaluates before applying optimizations.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
@@ -458,7 +485,7 @@ Tested on ALL frontier agents per methodology:
 - [ ] Fix v1's limited vision (remove caps?) to enable NAS
 - [ ] Combine v3's global threshold WITH NAS?
 - [ ] Optimize zen_all to match blitz performance (why is blitz faster?)
-- [ ] Add NAS to zen variants (might boost profit without speed cost)
+- [x] ~~Add NAS to zen variants~~ → Mostly HURTS (see Iteration 8)
 - [ ] Hybrid: zen speed with depth-2 scoring (score without full lookahead?)
 
 ---
