@@ -44,10 +44,10 @@ When looking for new optimizations, ask:
 | depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
 | adaptive | $4,995 | 0.0495ms | 100,909 | |
 | champion_v1 | $5,105 | 0.0516ms | 98,934 | balanced-fast |
-| champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
-| champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
+| champion_v6 | $6,723 | 0.076ms | 88,461 | balanced (dominates v5) |
+| champion_v3 | $6,832 | 0.156ms | 43,795 | max profit |
 
-*Updated after Iteration 11*
+*Updated after Iteration 22 (profile-guided optimization)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -535,6 +535,42 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 **ON FRONTIER:** +$397 over depth2_top2 for +10.6μs. Fills gap between depth2_top2 and v1.
 
 **Why it works:** Early exploration finds good routes when resources are plentiful. Late focus on best options avoids wasting time on depleted nodes.
+
+---
+
+## Iteration 19: Discount Factor Tuning (v6)
+
+**Hypothesis:** Discount factor for 2-step lookahead scoring affects profit.
+
+**Results:**
+| Discount | $/round |
+|----------|---------|
+| 0.5 | $6,703 |
+| 0.7 | $6,757 |
+| 0.9 | $6,665 (baseline) |
+| 1.0 | $6,595 |
+
+**Finding:** d=0.7 is optimal. Lower discount values immediate profit more, enabling compound gains.
+
+**champion_v6** created with d=0.7. Dominates champion_v5.
+
+---
+
+## Iteration 22: Profile-Guided Optimization
+
+**Tool used:** Python cProfile to identify bottlenecks.
+
+**Finding:** `score_edge` function was 56% of agent execution time (34,758 calls per 200 rounds).
+
+**Optimization:** Inline the hot path, cache world[pos] lookups.
+
+**Results:**
+| Agent | Before | After | Speedup |
+|-------|--------|-------|---------|
+| champion_v6 | 0.095ms | 0.076ms | 1.25x |
+| champion_v3 | 0.169ms | 0.156ms | 1.08x |
+
+**Lesson:** Memoization was SLOWER (cache overhead > recomputation). Inlining beats caching when function body is simple.
 
 ---
 
