@@ -4,13 +4,30 @@ This document tracks hypotheses tested, results, and learnings to avoid repeatin
 
 ---
 
-## Experimental Methodology
+## Experiment Cycle
 
-### Pareto Frontier Validation
+**Start by brainstorming ideas, then pick one and test it.**
 
-When testing a new agent, compare against **all frontier agents**, not just the most recent. An agent is valid if it's on the Pareto frontier - meaning no other agent strictly dominates it on ALL metrics.
+### Brainstorming Prompts
 
-**Current Frontier Agents:**
+When looking for new optimizations, ask:
+- What information is available but unused?
+- What could we cache/precompute? (prices static, quantities not; agents have persistent state now)
+- Where are gaps in the frontier? (big jump = opportunity)
+- What do profitable agents do that fast ones skip?
+- What assumptions might be wrong?
+- See "Ideas Not Yet Tested" section for backlog
+
+### Testing
+
+- Test ideas against frontier agents: `python3 experiment.py --all -n 30`
+- Check Pareto dominance in output
+- Update frontier table and document what we learned
+
+---
+
+## Current Frontier
+
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
 | zen | $117 | 0.0017ms | 70,260 | ultra-fast |
@@ -26,59 +43,16 @@ When testing a new agent, compare against **all frontier agents**, not just the 
 | champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
 | champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
 
-*Updated after Iteration 7: zen variants fill the zen→blitz gap*
+*Updated after Iteration 7*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
 2. New agent is NOT strictly dominated (worse on ALL metrics) by any frontier agent
 3. If dominated → discard. If on frontier → keep as new option.
 
-**Example:**
-- v4 ($6,284/r @ 0.118ms) is dominated by v2 ($6,298/r @ 0.086ms) → DISCARD
-- v3 ($6,875/r @ 0.161ms) is not dominated by v2 (more profit) → KEEP
+---
 
-### Experiment Design Process
-
-1. **Identify target**: Which part of the frontier are we trying to improve?
-   - More profit than v3? (push right)
-   - Faster than zen? (push left)
-   - Better efficiency in the middle? (push up)
-
-2. **Brainstorm ideas**: Generate multiple candidate ideas by asking:
-   - What information is available but unused?
-   - What do successful agents do that others don't?
-   - Can we combine strengths from different agents?
-   - What's the bottleneck in current agents? (compute? information? strategy?)
-   - What assumptions are we making that might be wrong?
-   - Look at "Ideas Not Yet Tested" section for inspiration
-
-3. **Form hypothesis**: Pick one idea and predict:
-   - Which agents will it help? Why?
-   - Which agents will it hurt? Why?
-   - What's the expected tradeoff (speed vs profit)?
-
-4. **Test idea against EACH frontier agent**: Apply the idea to each frontier agent:
-   - zen + idea
-   - blitz + idea
-   - champion_v5_blitz + idea
-   - champion_v1 + idea
-   - champion_v5 + idea
-   - champion_v3 + idea
-
-5. **Analyze results across all variants**:
-   - Did the idea help all agents? Some? None?
-   - WHY did it help/hurt in each case?
-   - Compare predictions from step 3 to actual results
-
-6. **Evaluate position**:
-   - On frontier? → New valid option
-   - Dominated? → Discard, document why it failed
-
-7. **Update frontier**: Add successful agents, remove any now-dominated agents
-
-8. **Reflect on meta-process**: What did we learn about how to experiment better?
-
-### Why Test Against Each Frontier Agent?
+## Why Test Against ALL Frontier Agents?
 
 Testing an idea against only one baseline can mislead:
 - Idea X might help v2 but hurt blitz
