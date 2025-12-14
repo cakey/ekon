@@ -175,45 +175,57 @@ def run_experiment(agent_func, name, num_runs=20, seeds=None):
 
 
 def main():
-    # Import agents to compare
-    from agents import champion_v1, champion_v2, champion_v3, blitz, lookahead
-    from agents import experimental_v4 as v4
+    import argparse
 
-    # ==========================================================================
-    # PARETO FRONTIER AGENTS - always include these as baselines
-    # See EXPERIMENTS.md "Experimental Methodology" for validation rules
-    # Updated after Iteration 5: blitz+nas, v2+nas now on frontier
-    # ==========================================================================
-    from agents import champion_v5, champion_v5_blitz
-    frontier = [
-        (champion_v5_blitz.agent, "blitz+nas"),  # fastest (replaces blitz)
-        (champion_v1.agent, "v1"),                # balanced-fast
-        (champion_v5.agent, "v2+nas"),            # balanced (BEST - dominates v2)
-        (champion_v3.agent, "v3"),                # max profit
-    ]
+    parser = argparse.ArgumentParser(
+        description='Run agent experiments and compare performance.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python3 experiment.py              # Run frontier agents (default)
+  python3 experiment.py --all        # Run ALL agents in registry
+  python3 experiment.py -n 50        # Run 50 simulations per agent
+  python3 experiment.py --all -n 100 # Run all agents, 100 sims each
 
-    # ==========================================================================
-    # EXPERIMENTAL AGENTS - add new agents here to test against frontier
-    # After testing: if dominated by any frontier agent, remove it
-    #
-    # Original agents tested - all dominated by blitz:
-    #   pirate_of_cakey: $3,485/r @ 0.009ms (blitz: $3,588/r @ 0.007ms)
-    #   east_india: $813/r @ 0.027ms
-    #   rockeffeler: $300/r @ 0.015ms
-    # ==========================================================================
-    experimental = [
-        # Add new experimental agents here
-    ]
+Current Pareto Frontier:
+  blitz+nas  - $3,748/r @ 0.007ms (fastest)
+  v1         - $5,023/r @ 0.052ms (balanced-fast)
+  v2+nas     - $6,668/r @ 0.087ms (best efficiency)
+  v3         - $6,823/r @ 0.168ms (max profit)
 
-    variants = frontier + experimental
+See EXPERIMENTS.md for full methodology.
+''')
+    parser.add_argument('-n', '--runs', type=int, default=30,
+                        help='Number of simulations per agent (default: 30)')
+    parser.add_argument('--all', action='store_true',
+                        help='Run ALL agents in registry, not just frontier')
+    parser.add_argument('--frontier', action='store_true',
+                        help='Run only Pareto frontier agents (default)')
 
-    num_runs = 30
-    if len(sys.argv) > 1:
-        num_runs = int(sys.argv[1])
+    args = parser.parse_args()
 
+    # Import agents
+    import agents as agent_registry
+    from agents import champion_v1, champion_v3, champion_v5, champion_v5_blitz
+
+    if args.all:
+        # Run ALL agents in the registry
+        variants = [(func, name) for name, func in agent_registry.agents.items()]
+        print(f"Running ALL {len(variants)} agents from registry...\n")
+    else:
+        # Run only Pareto frontier agents
+        variants = [
+            (champion_v5_blitz.agent, "blitz+nas"),  # fastest
+            (champion_v1.agent, "v1"),                # balanced-fast
+            (champion_v5.agent, "v2+nas"),            # balanced (BEST)
+            (champion_v3.agent, "v3"),                # max profit
+        ]
+        print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
+
+    num_runs = args.runs
     seeds = [random.randint(0, 1000000) for _ in range(num_runs)]
 
-    print(f"Running {num_runs} simulations per variant...\n")
+    print(f"{num_runs} simulations each\n")
     print("=" * 80)
     print(f"{'Variant':<20} {'$/round':>10} {'ms/round':>10} {'Efficiency':>12} {'Δ$/r':>10}")
     print("=" * 80)

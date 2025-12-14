@@ -12,14 +12,18 @@ A trading simulation where agents compete on a graph-based network of shops.
 Compare agents against the Pareto frontier with statistical analysis:
 
 ```bash
-python3 experiment.py [num_runs]
+python3 experiment.py              # Run frontier agents (default)
+python3 experiment.py --all        # Run ALL agents in registry
+python3 experiment.py -n 50        # Run 50 simulations per agent
+python3 experiment.py --all -n 100 # Run all agents, 100 sims each
+python3 experiment.py --help       # Show all options
 ```
 
-This runs experiments against the current frontier agents and reports:
+This runs experiments and reports:
 - $/round, ms/round, efficiency for each agent
 - Pareto dominance analysis (which agents should be kept/discarded)
 
-Default: 30 runs. Use more (e.g., 50-100) for reliable results.
+Default: 30 runs with frontier agents. Use more runs (50-100) for reliable results.
 
 ### Visual Simulation
 
