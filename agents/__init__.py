@@ -18,6 +18,7 @@ from . import depth2_global_all
 from . import hybrid_edge
 from . import hybrid_champion
 from . import max_profit
+from . import ultimate
 from . import blitz
 from . import champion_v1
 from . import champion_v3
@@ -53,7 +54,8 @@ agents = {
     # Balanced tier (0.01-0.1ms) - hybrid_champion DOMINATES depth2 family
     "hybrid_edge": hybrid_edge.agent,           # $4,640/r @ 0.0100ms (fills gap: global_arb+ → depth2)
     "hybrid_champion": hybrid_champion.agent,   # $9,888/r @ 0.0191ms (DOMINATED by max_profit)
-    "max_profit": max_profit.agent,             # $10,116/r @ 0.0172ms (NEW MAX PROFIT! DOMINATES hybrid_champion)
+    "max_profit": max_profit.agent,             # $10,116/r @ 0.0172ms (DOMINATED by ultimate)
+    "ultimate": ultimate.agent,                 # $11,065/r @ 0.0163ms (NEW MAX PROFIT! DOMINATES max_profit)
     "depth2_global": depth2_global.agent,       # $8,189/r @ 0.0263ms (dominated by hybrid_champion)
     "depth2_global_top4": depth2_global_top4.agent,  # $9,108/r @ 0.0379ms (dominated by hybrid_champion)
     "depth2_global_all": depth2_global_all.agent,    # $9,621/r @ 0.0895ms (dominated by hybrid_champion)

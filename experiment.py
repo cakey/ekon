@@ -222,7 +222,7 @@ See EXPERIMENTS.md for full methodology.
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
             (agent_registry.agents["backtrack_fast"], "backtrack_fast"),  # DOMINATES global_arb_plus!
             (agent_registry.agents["hybrid_edge"], "hybrid_edge"),    # fills gap
-            (agent_registry.agents["max_profit"], "max_profit"),  # NEW MAX PROFIT! Dominates hybrid_champion
+            (agent_registry.agents["ultimate"], "ultimate"),  # NEW MAX PROFIT! Dominates max_profit
         ]
         print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
 

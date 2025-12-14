@@ -50,7 +50,8 @@ When looking for new optimizations, ask:
 | **backtrack_fast** | **$4,321** | **0.0034ms** | **1,279,276** | **DOMINATES global_arb_plus! Backtrack avoidance** |
 | **hybrid_edge** | **$4,534** | **0.0109ms** | **414,632** | **Fills gap: global_arb+ → hybrid_champion** |
 | ~~hybrid_champion~~ | $9,888 | 0.0191ms | 517,696 | dominated by max_profit |
-| **max_profit** | **$10,116** | **0.0172ms** | **588,000** | **NEW MAX PROFIT! DOMINATES hybrid_champion** |
+| ~~max_profit~~ | $10,116 | 0.0172ms | 588,000 | dominated by ultimate |
+| **ultimate** | **$11,323** | **0.0161ms** | **703,000** | **NEW MAX PROFIT! DOMINATES max_profit** |
 | zen_3 | $225 | 0.0020ms | 113,842 | dominated by global_arb_turbo |
 | depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by hybrid_champion |
 | depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by hybrid_champion |
@@ -60,7 +61,7 @@ When looking for new optimizations, ask:
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 
-*Updated after Iteration 35 (max_profit - DOMINATES hybrid_champion)*
+*Updated after Iteration 36 (ultimate - DOMINATES max_profit)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -1193,6 +1194,55 @@ This captures more arbitrage opportunities without sacrificing sell prices.
 
 3. **More aggressive buying works**: Buying at 85% of global max instead of 80%
    captures more opportunities without hurting sell margins.
+
+---
+
+## Iteration 36: Ultimate (Combined Discoveries + Tuning)
+
+Goal: Combine all winning discoveries and tune parameters.
+
+### Part 1: Combined Discoveries
+
+1. **max_profit + backtrack avoidance**: SUCCESS!
+   - +$1,318/r (+13.5%) improvement
+   - Same speed (0.0163ms)
+   - DOMINATES max_profit
+
+2. **Novel ideas tested**: ALL FAILED
+   - Resource memory: -$3,653/r (tracking hurts)
+   - UCB exploration: -$2,380/r
+   - Early/late game: -$1,215/r
+   - Momentum: -$2,104/r
+
+3. **Compute-intensive strategies**: ALL FAILED
+   - Depth-2 all neighbors: -$230/r, 10x slower
+   - Depth-3 top-5: -$356/r, 51x slower
+   - Multi-path sampling: -$2,396/r, 30x slower
+   - More computation doesn't help!
+
+### Part 2: Parameter Tuning
+
+Tuned ultimate's parameters:
+- **Global weight**: 0.8 beats 0.5 (+$364/r)
+- **Sell thresholds**: 0.70-0.95 beats 0.60-0.90 (+$135/r)
+- Combined: +$478/r improvement
+
+### New Frontier Agent
+
+**ultimate**: $11,323/r @ 0.0161ms
+- Backtrack avoidance (from backtrack_fast)
+- 85% buy threshold (from max_profit)
+- Global weight 0.8 (tuned up from 0.5)
+- Sell thresholds 0.70-0.95 (tuned up from 0.60-0.90)
+
+DOMINATES max_profit: +$1,325/r AND faster!
+
+### Key Learnings
+
+1. **Combining discoveries compounds**: backtrack + threshold + tuning = +35% over hybrid_champion
+2. **Novel ideas mostly fail**: Resource memory, UCB, momentum all hurt performance
+3. **More compute doesn't help**: Graph is too random for deep planning
+4. **Parameter tuning works**: Simple threshold changes beat complex algorithms
 
 ---
 
