@@ -13,6 +13,7 @@ from . import champion_v5_blitz
 from . import zen
 from . import experimental_v6
 from . import experimental_v8
+# experimental_v9 dominated by blitz - not registered
 
 # See EXPERIMENTS.md for full hypothesis testing results
 
@@ -52,4 +53,5 @@ agents = {
   "zen_nas_6": experimental_v8.zen_nas_6,
   "zen_nas_8": experimental_v8.zen_nas_8,
   "zen_nas_all": experimental_v8.zen_nas_all,
+
 }

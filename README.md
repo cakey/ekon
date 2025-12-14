@@ -1,5 +1,6 @@
 Ekon :moneybag:
 ====
+Mostly playing around with autonomous agent experimentation, seeing w
 
 A trading simulation where agents compete on a graph-based network of shops.
 

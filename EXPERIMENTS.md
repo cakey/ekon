@@ -21,8 +21,10 @@ When looking for new optimizations, ask:
 ### Testing
 
 - Test ideas against frontier agents: `python3 experiment.py --all -n 30`
-- Check Pareto dominance in output
-- Update frontier table and document what we learned
+- **MANDATORY CHECK:** Is the new agent dominated by ANY existing agent?
+  - If dominated → FAILED, don't add to registry, document why
+  - If on frontier → SUCCESS, add to registry and frontier table
+- We don't care about profit alone or speed alone. Only the frontier matters.
 
 ---
 
@@ -469,6 +471,29 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 
 ---
 
+## Iteration 9: Why Blitz Beats Zen_all (NO FRONTIER IMPROVEMENT)
+
+**Question:** Both check all neighbors, but blitz makes 34% more profit. Why?
+
+**Investigation:**
+1. Float vs int division? NO difference in profit
+2. Random exploration? Found the cause!
+
+**Results:**
+| Agent | $/round | ms/round | Frontier? |
+|-------|---------|----------|-----------|
+| zen_all | $2,365 | 0.0072ms | yes |
+| zen_float+rand | $3,570 | 0.0088ms | **NO - dominated by blitz** |
+| blitz | $3,630 | 0.0077ms | yes |
+
+**DOMINATED:** zen_float+rand is slower AND less profitable than blitz. Useless.
+
+**Insight gained:** Random exploration when no trade exists adds ~$1,200/r. But this doesn't help us - blitz already does it better.
+
+**Lesson:** Understanding WHY something works ≠ improving the frontier. Must always check dominance before declaring success.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
@@ -484,7 +509,7 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 - [ ] Path caching (precompute common routes)
 - [ ] Fix v1's limited vision (remove caps?) to enable NAS
 - [ ] Combine v3's global threshold WITH NAS?
-- [ ] Optimize zen_all to match blitz performance (why is blitz faster?)
+- [x] ~~Optimize zen_all to match blitz~~ → Random exploration was the key (+$1,200/r!)
 - [x] ~~Add NAS to zen variants~~ → Mostly HURTS (see Iteration 8)
 - [ ] Hybrid: zen speed with depth-2 scoring (score without full lookahead?)
 
