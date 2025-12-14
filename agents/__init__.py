@@ -1,57 +1,35 @@
-from . import matt_shitty_agent
-from . import east_india_trade_company
-from . import the_pirate_of_cakey
-from . import chris_d_rockeffeler
+# Pareto Frontier Agents
+# Each agent represents a different profit/speed tradeoff
+# See EXPERIMENTS.md for methodology and results
+
+from . import zen
+from . import zen_variants
 from . import blitz
-from . import lookahead
 from . import champion_v1
-from . import champion_v2
 from . import champion_v3
-from . import champion_v4
 from . import champion_v5
 from . import champion_v5_blitz
-from . import zen
-from . import experimental_v6
-from . import experimental_v8
-# experimental_v9 dominated by blitz - not registered
-
-# See EXPERIMENTS.md for full hypothesis testing results
+from . import depth2_top2
 
 agents = {
-  # Originals (baseline comparisons - all dominated by blitz)
-  "matt_shitty_agent": matt_shitty_agent.agent,
-  "stewart_awesome_agent": east_india_trade_company.agent,
-  "the_pirate_of_cakey": the_pirate_of_cakey.agent,
-  "chris_d_rockeffeler": chris_d_rockeffeler.agent,
+    # Ultra-fast tier (0.001-0.005ms)
+    "zen": zen.agent,                       # $117/r @ 0.0017ms
+    "zen_3": zen_variants.zen_3,            # $241/r @ 0.0020ms
+    "zen_4": zen_variants.zen_4,            # $475/r @ 0.0025ms
+    "zen_5": zen_variants.zen_5,            # $838/r @ 0.0029ms
+    "zen_6": zen_variants.zen_6,            # $953/r @ 0.0033ms
+    "zen_8": zen_variants.zen_8,            # $1,625/r @ 0.0044ms
 
-  # Reference implementations
-  "blitz": blitz.agent,           # $3,570/r @ 0.008ms (dominated by blitz+nas)
-  "lookahead": lookahead.agent,   # $3,000/r @ 2ms (original best)
+    # Fast tier (0.005-0.01ms)
+    "zen_all": zen_variants.zen_all,        # $2,710/r @ 0.0074ms
+    "blitz": blitz.agent,                   # $3,622/r @ 0.0082ms
+    "blitz_nas": champion_v5_blitz.agent,   # $3,774/r @ 0.0084ms
 
-  # Champions (experiment winners)
-  "champion_v1": champion_v1.agent,       # $5,023/r @ 0.052ms (depth2 top4)
-  "champion_v2": champion_v2.agent,       # $6,298/r @ 0.086ms (dominated by v5)
-  "champion_v3": champion_v3.agent,       # $6,823/r @ 0.168ms (max profit)
-  "champion_v4": champion_v4.agent,       # $6,284/r @ 0.118ms (REGRESSION)
-  "champion_v5": champion_v5.agent,       # $6,668/r @ 0.087ms (BEST - v2+NAS)
-  "champion_v5_blitz": champion_v5_blitz.agent,  # $3,748/r @ 0.007ms (fastest)
-  "zen": zen.agent,                       # $107/r @ 0.0017ms - dominates matt
+    # Balanced tier (0.01-0.1ms)
+    "depth2_top2": depth2_top2.agent,       # $4,472/r @ 0.0282ms
+    "champion_v1": champion_v1.agent,       # $5,093/r @ 0.0549ms
+    "champion_v5": champion_v5.agent,       # $6,668/r @ 0.0936ms (BEST efficiency)
 
-  # Experimental v6 - zen variants (testing neighbor counts)
-  "zen_3": experimental_v6.zen_3,
-  "zen_4": experimental_v6.zen_4,
-  "zen_5": experimental_v6.zen_5,
-  "zen_6": experimental_v6.zen_6,
-  "zen_8": experimental_v6.zen_8,
-  "zen_all": experimental_v6.zen_all,
-
-  # Experimental v8 - zen + NAS variants
-  "zen_nas_2": experimental_v8.zen_nas_2,
-  "zen_nas_3": experimental_v8.zen_nas_3,
-  "zen_nas_4": experimental_v8.zen_nas_4,
-  "zen_nas_5": experimental_v8.zen_nas_5,
-  "zen_nas_6": experimental_v8.zen_nas_6,
-  "zen_nas_8": experimental_v8.zen_nas_8,
-  "zen_nas_all": experimental_v8.zen_nas_all,
-
+    # Max profit tier (0.1ms+)
+    "champion_v3": champion_v3.agent,       # $6,818/r @ 0.1765ms
 }

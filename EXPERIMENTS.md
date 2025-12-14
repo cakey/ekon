@@ -41,11 +41,12 @@ When looking for new optimizations, ask:
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
+| depth2_top2 | $4,472 | 0.0282ms | 158,582 | **NEW** |
 | champion_v1 | $5,093 | 0.0549ms | 92,846 | balanced-fast |
 | champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
 | champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
 
-*Updated after Iteration 7*
+*Updated after Iteration 10*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -491,6 +492,25 @@ Blitz works differently - it factors actual coin during neighbor evaluation.
 **Insight gained:** Random exploration when no trade exists adds ~$1,200/r. But this doesn't help us - blitz already does it better.
 
 **Lesson:** Understanding WHY something works ≠ improving the frontier. Must always check dominance before declaring success.
+
+---
+
+## Iteration 10: Depth-2 Top-2 (FRONTIER SUCCESS)
+
+**Goal:** Fill the blitz→v1 gap ($3,774 → $5,093 = $1,319 for 6.5x slower)
+
+**Idea:** v1 does depth-2 with top-4 neighbors (16 edge scores). What about top-2? (4 edge scores = 4x faster)
+
+**Results:**
+| Agent | $/round | ms/round | Frontier? |
+|-------|---------|----------|-----------|
+| blitz+nas | $3,709 | 0.0074ms | yes |
+| depth2_top2 | $4,472 | 0.0282ms | **YES - NEW!** |
+| v1 | $5,051 | 0.0528ms | yes |
+
+**ON FRONTIER:** +$763 more than blitz (3.8x slower), -$579 less than v1 (1.9x faster)
+
+**Why it works:** Depth-2 lookahead captures "buy here, sell there, then what?" information that blitz misses. Top-2 is enough to find good paths without the overhead of top-4.
 
 ---
 

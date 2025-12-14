@@ -1,55 +1,27 @@
 """
-Champion Agent v2 - Best configuration from experimental iteration 2.
+Experimental Agent v10 - Depth-2 with top-2 neighbors
 
-=== EXPERIMENT FINDINGS (Iteration 2) ===
+Goal: Fill the blitz→v1 gap ($3,774 → $5,093)
 
-Built on champion_v1 (depth2 top4 cap100: $5,052/r @ 0.057ms)
+v1: depth-2, top-4 neighbors = 16 edge scores
+v10: depth-2, top-2 neighbors = 4 edge scores (4x faster)
 
-TESTED:
-- future_discount: 0.7-1.0 (no significant impact)
-- budget_reserve: 10-20% (hurts profit)
-- qty_cap: 50, 100, 200, none (NONE is best!)
-- buy_all_profitable: True/False (True is crucial)
-- hub_bonus: 10-100 (HURTS badly)
-- min_margin: 1-5 (HURTS - don't filter low margin)
-- top_n: 4-8, all (MORE is better, ALL is best)
-
-KEY INSIGHT:
-Removing qty_cap=100 gave +$458/round alone.
-Using ALL neighbors instead of top-4 gave +$730/round more.
-Combined: +$1,189/round (+23.5% improvement!)
-
-Surprising: no_cap ALL is FASTER than no_cap top8 (0.094 vs 0.104ms)
-because sorting overhead exceeds pruning benefit when N is large.
-
-=== THIS AGENT'S CONFIG ===
-- Lookahead: depth 2
-- Neighbors: ALL (no pruning)
-- Quantity cap: NONE
-- No global prices, no hub bonus, no margin filter
-
-=== PERFORMANCE ===
-- $/round:    +$6,241
-- ms/round:   0.094ms
-- Efficiency: 66,087 ($/round/ms)
-
-Compare to v1:
-- champion_v1: $5,052/r @ 0.057ms (eff: 89,207)
-- champion_v2: $6,241/r @ 0.094ms (eff: 66,087) ← +23.5% profit
+Expected: ~$4,000-4,500/r at ~0.015-0.025ms
+Must check: Is it on the Pareto frontier? (not dominated by blitz or v1)
 """
 
 import random
 _r = random.choice
 
 
-def agent(ws, *a, **k):
-    y = ws['you']
+def agent(world_state, *args, **kwargs):
+    y = world_state['you']
     pos = y['position']
     coin = y['coin']
     my_res = y['resources']
-    world = ws['world']
+    world = world_state['world']
     my_shop = world[pos]['resources']
-    meta = ws['meta']
+    meta = world_state['meta']
 
     neighbors = list(world[pos]['neighbours'].keys())
 
@@ -72,43 +44,47 @@ def agent(ws, *a, **k):
         return {'resources_to_sell_to_shop': sells, 'resources_to_buy_from_shop': {}, 'move': pos}
 
     def score_edge(from_pos, to_pos):
-        """Score an edge by arbitrage profit: buy at from, sell at to.
-        NO quantity cap - use full potential."""
+        """Score arbitrage: buy at from, sell at to."""
         from_shop = world[from_pos]['resources']
         to_shop = world[to_pos]['resources']
         score = 0
-
         for res, info in from_shop.items():
             qty, price = info['quantity'], info['sell']
             if qty > 0 and price > 0:
                 to_info = to_shop.get(res)
                 if to_info and to_info['buy'] > price:
-                    score += (to_info['buy'] - price) * qty  # No cap!
-
+                    score += (to_info['buy'] - price) * qty  # No qty cap
         return score
 
-    # 2-step lookahead with ALL neighbors (no pruning - faster than sorting!)
+    def get_top_neighbors(from_pos, n=2):
+        """Get top N neighbors by edge score."""
+        nbs = list(world[from_pos]['neighbours'].keys())
+        if len(nbs) <= n:
+            return nbs
+        scored = [(nb, score_edge(from_pos, nb)) for nb in nbs]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [nb for nb, _ in scored[:n]]
+
+    # 2-step lookahead with top-2 neighbors
     best_n1 = None
     best_score = -1
 
-    for n1 in neighbors:
+    for n1 in get_top_neighbors(pos, 2):
         s1 = score_edge(pos, n1)
-
-        # Check all second-hop neighbors too
-        n1_neighbors = list(world[n1]['neighbours'].keys())
-        s2 = max((score_edge(n1, n2) for n2 in n1_neighbors), default=0)
-
+        top_n2 = get_top_neighbors(n1, 2)
+        s2 = max((score_edge(n1, n2) for n2 in top_n2), default=0)
         total = s1 + s2 * 0.9
         if total > best_score:
             best_score = total
             best_n1 = n1
 
+    # Random exploration if no opportunity
     if not best_n1:
-        best_n1 = _r(neighbors)
+        best_n1 = _r(neighbors) if neighbors else pos
 
     # Buy profitable resources for chosen destination
-    trades = []
     next_shop = world[best_n1]['resources']
+    trades = []
 
     for res, info in my_shop.items():
         qty, price = info['quantity'], info['sell']

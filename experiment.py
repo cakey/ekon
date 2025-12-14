@@ -207,21 +207,22 @@ See EXPERIMENTS.md for full methodology.
 
     # Import agents
     import agents as agent_registry
-    from agents import champion_v1, champion_v3, champion_v5, champion_v5_blitz
 
     if args.all:
-        # Run ALL agents in the registry
+        # Run ALL agents in the registry (all are frontier agents now)
         variants = [(func, name) for name, func in agent_registry.agents.items()]
-        print(f"Running ALL {len(variants)} agents from registry...\n")
+        print(f"Running ALL {len(variants)} frontier agents...\n")
     else:
-        # Run only Pareto frontier agents
+        # Run key frontier agents (representative sample)
         variants = [
-            (champion_v5_blitz.agent, "blitz+nas"),  # fastest
-            (champion_v1.agent, "v1"),                # balanced-fast
-            (champion_v5.agent, "v2+nas"),            # balanced (BEST)
-            (champion_v3.agent, "v3"),                # max profit
+            (agent_registry.agents["zen"], "zen"),              # ultra-fast
+            (agent_registry.agents["blitz_nas"], "blitz_nas"),  # fast
+            (agent_registry.agents["depth2_top2"], "depth2_top2"),  # balanced-fast
+            (agent_registry.agents["champion_v1"], "v1"),       # balanced
+            (agent_registry.agents["champion_v5"], "v5"),       # best efficiency
+            (agent_registry.agents["champion_v3"], "v3"),       # max profit
         ]
-        print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
+        print(f"Running {len(variants)} key frontier agents (use --all for all 13)...\n")
 
     num_runs = args.runs
     seeds = [random.randint(0, 1000000) for _ in range(num_runs)]
