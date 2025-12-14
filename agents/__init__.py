@@ -2,21 +2,27 @@ from . import matt_shitty_agent
 from . import east_india_trade_company
 from . import the_pirate_of_cakey
 from . import chris_d_rockeffeler
+from . import blitz
 from . import lookahead
-from . import fast_lookahead
-from . import fast_lookahead2
-from . import global_arb
-from . import ultrafast
+from . import champion_v1
+from . import champion_v2
+from . import champion_v3
+
+# See EXPERIMENTS.md for full hypothesis testing results
 
 agents = {
+  # Originals (baseline comparisons)
   "matt_shitty_agent": matt_shitty_agent.agent,
   "stewart_awesome_agent": east_india_trade_company.agent,
   "the_pirate_of_cakey": the_pirate_of_cakey.agent,
-  "the_pirate_of_cakey_recurse": the_pirate_of_cakey.agent_slow,
   "chris_d_rockeffeler": chris_d_rockeffeler.agent,
-  "lookahead": lookahead.agent,
-  "fast_lookahead": fast_lookahead.agent,
-  "fast_lookahead2": fast_lookahead2.agent,
-  "global_arb": global_arb.agent,
-  "ultrafast": ultrafast.agent,
+
+  # Reference implementations
+  "blitz": blitz.agent,           # $1,500/r @ 0.008ms (fastest)
+  "lookahead": lookahead.agent,   # $3,000/r @ 2ms (original best)
+
+  # Champions (experiment winners)
+  "champion_v1": champion_v1.agent,  # $5,052/r @ 0.057ms (depth2 top4)
+  "champion_v2": champion_v2.agent,  # $6,241/r @ 0.094ms (depth2 ALL, no cap)
+  "champion_v3": champion_v3.agent,  # $6,857/r @ 0.17ms (+ sell threshold 0.75)
 }

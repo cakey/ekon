@@ -193,7 +193,7 @@ class GameVisualizer:
         # Header row
         self._put(2, 0, " LEADERBOARD (by $/r/ms)", curses.A_BOLD | curses.A_UNDERLINE)
         # Column headers
-        hdr = "     NAME                         EFF($/r/ms)         COIN      $/r      ms/r"
+        hdr = "     NAME                         EFF($/r/ms)         COIN      $/r        ms/r"
         if stats.runs > 0:
             hdr += "    WR"
         self._put(3, 0, hdr, curses.A_DIM)
@@ -209,7 +209,7 @@ class GameVisualizer:
                 ppr = agent.get('profit_per_round', 0)
                 ppr_str = f"{ppr:>+8,.0f}"
                 tpr = agent.get('time_per_round', 0)
-                tpr_str = f"{tpr:>8.2f}"
+                tpr_str = f"{tpr:>10.4f}"
                 eff = agent.get('efficiency', 0)
                 eff_str = f"{eff:>12,.1f}"
 
@@ -230,7 +230,7 @@ class GameVisualizer:
             self._hline(stats_y, max_x)
             self._put(stats_y + 1, 0, f" AGGREGATE ({stats.runs} runs)", curses.A_BOLD | curses.A_UNDERLINE)
             # Column headers for aggregate
-            self._put(stats_y + 2, 0, "     NAME                         EFF($/r/ms)   WINS     WR%    AVG COIN      $/r      ms/r", curses.A_DIM)
+            self._put(stats_y + 2, 0, "     NAME                         EFF($/r/ms)   WINS     WR%    AVG COIN      $/r        ms/r", curses.A_DIM)
 
             # Show agents sorted by average efficiency
             all_agents = list(stats.total_efficiency.keys())
@@ -246,7 +246,7 @@ class GameVisualizer:
                 avg_tpr = stats.get_avg_tpr(name)
                 avg_eff = stats.get_avg_efficiency(name)
                 display_name = name[:28].ljust(28)
-                line = f" {i+1}. {display_name} {avg_eff:>12,.1f}   {stats.wins[name]:>4}   {wr:>5.1f}% ${avg_coin:>12,.0f} {avg_ppr:>+8,.0f} {avg_tpr:>8.2f}"
+                line = f" {i+1}. {display_name} {avg_eff:>12,.1f}   {stats.wins[name]:>4}   {wr:>5.1f}% ${avg_coin:>12,.0f} {avg_ppr:>+8,.0f} {avg_tpr:>10.4f}"
                 self._put(y, 0, line)
             log_start = stats_y + 3 + min(5, len(agents_by_eff)) + 1
         else:

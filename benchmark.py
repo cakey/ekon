@@ -161,7 +161,7 @@ def run_benchmark(args, agent_filter):
     print()
 
     # Results
-    print(f"{'AGENT':28} {'WINS':>6} {'WIN%':>7} {'AVG EFF':>12} {'AVG $/r':>10} {'AVG ms/r':>10}")
+    print(f"{'AGENT':28} {'WINS':>6} {'WIN%':>7} {'AVG EFF':>12} {'AVG $/r':>10} {'AVG ms/r':>12}")
     print("-" * 80)
 
     n = args.num_sims
@@ -170,7 +170,7 @@ def run_benchmark(args, agent_filter):
         avg_ppr = total_ppr[name] / n
         avg_tpr = total_tpr[name] / n
         win_pct = wins[name] * 100 / n
-        print(f"{name:28} {wins[name]:>6} {win_pct:>6.1f}% {avg_eff:>12,.1f} {avg_ppr:>+10,.0f} {avg_tpr:>10.3f}")
+        print(f"{name:28} {wins[name]:>6} {win_pct:>6.1f}% {avg_eff:>12,.1f} {avg_ppr:>+10,.0f} {avg_tpr:>12.5f}")
 
     print()
     print(f"Throughput: {n / elapsed:.1f} sims/sec, {n * args.rounds / elapsed:.0f} rounds/sec")
