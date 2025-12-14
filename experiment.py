@@ -80,7 +80,8 @@ def run_single_agent(agent_func, seed=None):
         "coin": STARTING_COIN,
         "position": random.choice(list(world_graph.keys())),
         "resources": {},
-        "time": 0
+        "time": 0,
+        "persistent_state": {}  # Persistent state across rounds - agents can use for caching
     }
 
     for round_number in range(NUM_ROUNDS):
@@ -100,7 +101,7 @@ def run_single_agent(agent_func, seed=None):
 
         start = time.perf_counter()
         try:
-            move = agent_func(state_to_pass)
+            move = agent_func(state_to_pass, agent_state["persistent_state"])
         except Exception as e:
             print(f"Agent error: {e}")
             continue

@@ -114,7 +114,8 @@ def run_sim(observer=None, debug_log=False, quiet=False):
             "coin": traveller_start_gold,
             "position": random.choice(list(world_graph.keys())),
             "resources": {},
-            "time": 0
+            "time": 0,
+            "state": {}  # Persistent state across rounds - agents can use for caching
         } for name,func in agents.agents.items()]
 
     if dlog:
@@ -148,7 +149,7 @@ def run_sim(observer=None, debug_log=False, quiet=False):
             start = time.time()
             move = None
             try:
-                move = current_agent["func"](state_to_pass)
+                move = current_agent["func"](state_to_pass, current_agent["state"])
             except Exception as e:
                 current_agent["time"] += (time.time() - start)
                 L.invalid(current_agent, '', e)
