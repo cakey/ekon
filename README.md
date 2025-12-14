@@ -5,14 +5,26 @@ A trading simulation where agents compete on a graph-based network of shops.
 
 ![Terminal Visualization](screenshot.png)
 
-### Running
+## Running
 
-**Basic (headless):**
+### Experiment Runner (Recommended for Testing)
+
+Compare agents against the Pareto frontier with statistical analysis:
+
 ```bash
-python3 sim.py
+python3 experiment.py [num_runs]
 ```
 
-**With terminal visualization:**
+This runs experiments against the current frontier agents and reports:
+- $/round, ms/round, efficiency for each agent
+- Pareto dominance analysis (which agents should be kept/discarded)
+
+Default: 30 runs. Use more (e.g., 50-100) for reliable results.
+
+### Visual Simulation
+
+Watch agents compete in real-time:
+
 ```bash
 python3 run_visual.py
 ```
@@ -29,6 +41,29 @@ After simulation completes:
 - `1` - Run 1 more
 - `T` - Run 10 more
 - `H` - Run 100 more
+
+**Note:** This runs ALL agents in `agents/__init__.py`, not just the frontier.
+
+### Headless Simulation
+
+Run without visualization:
+
+```bash
+python3 sim.py
+```
+
+Runs all agents in the registry for a single game.
+
+## Current Pareto Frontier
+
+| Agent | $/round | ms/round | Efficiency | Notes |
+|-------|---------|----------|------------|-------|
+| blitz+nas | $3,748 | 0.007ms | 535,429 | Fastest |
+| v1 | $5,023 | 0.052ms | 96,596 | Balanced-fast |
+| v2+nas | $6,668 | 0.087ms | 76,644 | Best efficiency |
+| v3 | $6,823 | 0.168ms | 40,613 | Max profit |
+
+See `EXPERIMENTS.md` for full methodology and experiment history.
 
 ### Process
 
