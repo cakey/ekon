@@ -189,10 +189,11 @@ Examples:
   python3 experiment.py --all -n 100 # Run all agents, 100 sims each
 
 Current Pareto Frontier:
-  blitz+nas  - $3,748/r @ 0.007ms (fastest)
-  v1         - $5,023/r @ 0.052ms (balanced-fast)
-  v2+nas     - $6,668/r @ 0.087ms (best efficiency)
-  v3         - $6,823/r @ 0.168ms (max profit)
+  zen           - $117/r @ 0.002ms (ultra-fast)
+  zen_3         - $235/r @ 0.002ms
+  global_arb    - $4,050/r @ 0.003ms (dominates blitz, zen_all)
+  global_arb_plus - $4,230/r @ 0.0035ms
+  depth2_global - $7,577/r @ 0.025ms (dominates ALL champions!)
 
 See EXPERIMENTS.md for full methodology.
 ''')
@@ -213,17 +214,15 @@ See EXPERIMENTS.md for full methodology.
         variants = [(func, name) for name, func in agent_registry.agents.items()]
         print(f"Running ALL {len(variants)} frontier agents...\n")
     else:
-        # Run key frontier agents (representative sample)
+        # Run key frontier agents (the actual Pareto frontier)
         variants = [
-            (agent_registry.agents["zen"], "zen"),              # ultra-fast
-            (agent_registry.agents["blitz_nas"], "blitz_nas"),  # fast
-            (agent_registry.agents["depth2_top2_nas"], "d2t2_nas"),  # balanced-fast
-            (agent_registry.agents["adaptive"], "adaptive"),    # adaptive strategy
-            (agent_registry.agents["champion_v1"], "v1"),       # balanced
-            (agent_registry.agents["champion_v6"], "v6"),       # best efficiency
-            (agent_registry.agents["champion_v3"], "v3"),       # max profit
+            (agent_registry.agents["zen"], "zen"),                    # ultra-fast
+            (agent_registry.agents["zen_3"], "zen_3"),                # ultra-fast
+            (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
+            (agent_registry.agents["global_arb_plus"], "global_arb+"), # fast+
+            (agent_registry.agents["depth2_global"], "depth2_global"), # dominates all champions!
         ]
-        print(f"Running {len(variants)} key frontier agents (use --all for all 14)...\n")
+        print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
 
     num_runs = args.runs
     seeds = [random.randint(0, 1000000) for _ in range(num_runs)]
