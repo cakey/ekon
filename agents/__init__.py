@@ -10,6 +10,7 @@ from . import champion_v3
 from . import champion_v5_blitz
 from . import champion_v6
 from . import champion_v7
+from . import champion_v8
 from . import depth2_top2_nas
 from . import adaptive
 
@@ -34,6 +35,7 @@ agents = {
     "champion_v6": champion_v6.agent,       # $6,775/r @ 0.073ms (dominates v5)
 
     # Max profit tier (0.1-0.2ms)
-    "champion_v7": champion_v7.agent,       # $6,996/r @ 0.148ms (dominates v3)
+    "champion_v8": champion_v8.agent,       # $7,184/r @ 0.148ms (dominates v7)
+    "champion_v7": champion_v7.agent,       # $6,996/r @ 0.148ms (dominated by v8)
     "champion_v3": champion_v3.agent,       # $6,515/r @ 0.161ms (dominated by v7)
 }

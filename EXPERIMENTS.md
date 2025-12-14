@@ -45,9 +45,10 @@ When looking for new optimizations, ask:
 | adaptive | $4,995 | 0.0495ms | 100,909 | |
 | champion_v1 | $5,082 | 0.0472ms | 107,567 | balanced-fast |
 | champion_v6 | $6,775 | 0.073ms | 93,349 | balanced (dominates v5) |
-| **champion_v7** | **$6,996** | **0.148ms** | **47,320** | **max profit (dominates v3)** |
+| champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
+| **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 24 (global-aware buy/sell)*
+*Updated after Iteration 25 (cash-adaptive thresholds)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -626,6 +627,39 @@ Applied global price awareness to BOTH buying and selling decisions.
 **Key Insight:** Global price awareness helps both directions:
 - Selling: Wait for near-optimal prices, but don't miss good opportunities
 - Buying: Prioritize resources we can resell at premium prices
+
+---
+
+## Iteration 25: Cash-Adaptive Thresholds (FRONTIER SUCCESS)
+
+Dynamic thresholds based on cash on hand.
+
+**Hypothesis:** Liquidity constraints matter early, diminish as capital grows.
+- Poor: Accept lower-margin deals to build capital
+- Rich: Wait for premium prices
+
+**Threshold tuning:**
+
+| Config | Result vs v7 |
+|--------|--------------|
+| $500-$10000, 70%-95% | +$5/r |
+| $500-$10000, 70%-98% | **+$68/r** |
+| $500-$10000, 70%-100% | +$65/r |
+
+**Final Configuration (champion_v8):**
+- Sell threshold: 70% (poor) → 98% (rich), interpolated by cash
+- Cash range: $500 - $10000
+
+**Results:**
+
+| Agent | $/round | ms/round |
+|-------|---------|----------|
+| champion_v7 | $6,996 | 0.148ms |
+| **champion_v8** | **$7,184** | **0.148ms** |
+
+Improvement: +$188/round (+2.7%), same speed.
+
+**Key Insight:** Being pickier when rich (98% vs 95%) is more valuable than being looser when poor.
 
 ---
 
