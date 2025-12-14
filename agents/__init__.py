@@ -10,6 +10,7 @@ from . import champion_v3
 from . import champion_v4
 from . import champion_v5
 from . import champion_v5_blitz
+from . import zen
 
 # See EXPERIMENTS.md for full hypothesis testing results
 
@@ -31,4 +32,5 @@ agents = {
   "champion_v4": champion_v4.agent,       # $6,284/r @ 0.118ms (REGRESSION)
   "champion_v5": champion_v5.agent,       # $6,668/r @ 0.087ms (BEST - v2+NAS)
   "champion_v5_blitz": champion_v5_blitz.agent,  # $3,748/r @ 0.007ms (fastest)
+  "zen": zen.agent,                       # $0/r - dominates matt_shitty_agent
 }
