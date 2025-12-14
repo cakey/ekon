@@ -6,6 +6,7 @@ from . import zen
 from . import zen_variants
 from . import simple_random
 from . import simple_global
+from . import hybrid_greedy
 from . import blitz
 from . import champion_v1
 from . import champion_v3
@@ -29,6 +30,7 @@ agents = {
 
     # Fast tier (0.005-0.01ms)
     "zen_all": zen_variants.zen_all,        # $2,710/r @ 0.0074ms
+    "hybrid_greedy": hybrid_greedy.agent,   # $2,761/r @ 0.0077ms (greedy movement + global selling)
     "blitz": blitz.agent,                   # $3,622/r @ 0.0082ms
     "blitz_nas": champion_v5_blitz.agent,   # $3,774/r @ 0.0084ms
 

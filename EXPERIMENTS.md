@@ -36,6 +36,7 @@ When looking for new optimizations, ask:
 | zen_3 | $235 | 0.0020ms | 118,708 | |
 | **simple_global** | **$2,011** | **0.0029ms** | **689,137** | **dominates simple_random, zen_8** |
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
+| **hybrid_greedy** | **$2,761** | **0.0077ms** | **358,634** | **greedy movement + global selling** |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
 | depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
@@ -45,7 +46,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
 | **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 27 (simple_global agent)*
+*Updated after Iteration 28 (hybrid_greedy agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -710,6 +711,41 @@ Combining simple_random's speed with global price awareness.
 - Dominates zen_8 (faster AND more profit)
 
 **Key Insight:** Precomputing global prices gives cash-adaptive selling benefits without per-round overhead. The combination of random movement + smart selling beats both pure random and zen's careful neighbor selection.
+
+---
+
+## Iteration 28: Hybrid Greedy Movement + Global Selling (FRONTIER SUCCESS)
+
+Combining greedy movement (like blitz) with precomputed global selling.
+
+**Hypothesis:** Random movement in simple_global misses opportunities. Greedy 1-step movement should improve profit without much speed cost.
+
+**Agent design:**
+- Movement: Greedy (pick neighbor with best immediate profit potential)
+- Selling: Cash-adaptive threshold (60%→95% of global max)
+- Buying: All profitable items, sorted by ratio
+- Global prices: Precomputed once at round 0
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| zen_all | $2,710 | 0.0074ms | 363,860 |
+| **hybrid_greedy** | **$2,761** | **0.0077ms** | **358,634** |
+| blitz | $3,622 | 0.0082ms | 439,690 |
+
+**Pareto Analysis:**
+- +$51 more than zen_all for +0.0003ms
+- On frontier between zen_all and blitz
+
+**Buy threshold experiment (FAILED):**
+- Tested cash-adaptive buy thresholds (5%→35% ROI minimum)
+- All configurations hurt performance significantly
+- 5%→35% ROI: $313/r (88% loss!)
+- 0%→5% ROI: $1,787/r (35% loss)
+- Conclusion: Buy everything profitable, no filtering needed
+
+**Key Insight:** Greedy movement helps marginally over random, but the real gains come from global-aware selling. Buy thresholds hurt because they miss profitable opportunities - volume of small trades matters.
 
 ---
 
