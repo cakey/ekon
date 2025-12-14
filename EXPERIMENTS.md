@@ -34,8 +34,7 @@ When looking for new optimizations, ask:
 |-------|---------|----------|------------|----------|
 | zen | $117 | 0.0016ms | 72,273 | ultra-fast |
 | zen_3 | $235 | 0.0020ms | 118,708 | |
-| **simple_random** | **$1,417** | **0.0021ms** | **664,687** | **dominates zen_4,5,6** |
-| zen_8 | $1,598 | 0.0042ms | 379,546 | |
+| **simple_global** | **$2,011** | **0.0029ms** | **689,137** | **dominates simple_random, zen_8** |
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
@@ -46,7 +45,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
 | **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 26 (simple_random agent)*
+*Updated after Iteration 27 (simple_global agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -683,6 +682,34 @@ Fresh approach: What if we abandon lookahead entirely?
 - On frontier between zen_3 and zen_8
 
 **Key Insight:** Random exploration + greedy trading outperforms careful neighbor selection in the ultra-fast tier. The complexity of scoring neighbors costs more time than it saves in quality.
+
+---
+
+## Iteration 27: Precomputed Global Prices (FRONTIER SUCCESS)
+
+Combining simple_random's speed with global price awareness.
+
+**Key insight:** Global prices are static (only quantities change). Precompute once at round 0.
+
+**Agent design:**
+- Movement: Pure random
+- Selling: Cash-adaptive threshold (60%→95% of global max)
+- Buying: All profitable items
+- Global prices: Precomputed once at round 0
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| simple_random | $1,400 | 0.0040ms | 347,750 |
+| zen_8 | $1,623 | 0.0048ms | 334,772 |
+| **simple_global** | **$2,011** | **0.0029ms** | **689,137** |
+
+**Pareto Analysis:**
+- Dominates simple_random (faster AND more profit)
+- Dominates zen_8 (faster AND more profit)
+
+**Key Insight:** Precomputing global prices gives cash-adaptive selling benefits without per-round overhead. The combination of random movement + smart selling beats both pure random and zen's careful neighbor selection.
 
 ---
 
