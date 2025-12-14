@@ -1,48 +1,30 @@
 """
-Champion Agent v3 - Best configuration from experimental iteration 3.
+Champion Agent v3 - Global Sell Threshold + Inlined Hot Path
 
-=== EXPERIMENT FINDINGS (Iteration 3) ===
+=== EXPERIMENT FINDINGS ===
 
-Built on champion_v2 ($6,241/r @ 0.094ms)
+Iteration 3: Global sell threshold (75%) adds +$576/r.
+Iteration 22: Inlined scoring gives 1.08x speedup.
 
-TESTED:
-- sell_threshold: 0.5-0.9 (only sell if price >= X% of global max)
-- buy_for_global: Buy based on global max potential
-- move_toward_sale: Bias movement toward best sale locations
-
-RESULTS:
-- sell_threshold=0.75: +$576/round (BEST)
-- Plateau from 0.73-0.76, all give same improvement
-- global_buy: Still disasters (-$6,319/round) - don't use
-- move_toward_sale: Hurts performance
-
-KEY INSIGHT:
-The "carry to destination" strategy works, but ONLY for selling:
-- Buy based on immediate neighbor profit (v2 behavior)
+KEY INSIGHT: The "carry to destination" strategy works for selling:
 - Hold items until you can sell at 75%+ of global max
-- Don't try to buy based on global prices (still broken)
+- Buy based on immediate neighbor profit (not global)
 
 === THIS AGENT'S CONFIG ===
-- Lookahead: depth 2, ALL neighbors
-- Quantity cap: NONE
+- Lookahead: depth 2, ALL neighbors (inlined)
+- Discount factor: 0.9
 - Sell threshold: 0.75 (only sell at 75%+ of global max)
-- Buy strategy: immediate neighbor (not global)
+- Buy strategy: immediate neighbor
 
 === PERFORMANCE ===
-- $/round:    +$6,857
-- ms/round:   0.17ms
-- Efficiency: 40,335 ($/round/ms)
+- $/round:    +$6,832
+- ms/round:   0.156ms
+- Efficiency: 43,795
 
-Compare to previous:
-- champion_v1: $5,052/r @ 0.057ms
-- champion_v2: $6,241/r @ 0.094ms
-- champion_v3: $6,857/r @ 0.17ms ← +10% over v2
+Max profit agent under 0.5ms cap.
 """
 
 import random
-_r = random.choice
-
-SELL_THRESHOLD = 0.75  # Only sell at 75%+ of global max
 
 
 def agent(ws, *a, **k):
@@ -51,12 +33,12 @@ def agent(ws, *a, **k):
     coin = y['coin']
     my_res = y['resources']
     world = ws['world']
-    my_shop = world[pos]['resources']
     meta = ws['meta']
 
-    neighbors = list(world[pos]['neighbours'].keys())
+    my_node = world[pos]
+    my_shop = my_node['resources']
+    neighbors = list(my_node['neighbours'].keys())
 
-    # Last round - sell everything
     if meta['current_round'] == meta['total_rounds'] - 1:
         return {
             'resources_to_sell_to_shop': {r: q for r, q in my_res.items() if r in my_shop and q > 0},
@@ -71,56 +53,67 @@ def agent(ws, *a, **k):
             if info['buy'] > global_buy.get(res, 0):
                 global_buy[res] = info['buy']
 
-    # Sell inventory - but only if price >= 75% of global max
+    # Sell only at 75%+ of global max
     sells = {}
     for res, qty in my_res.items():
         if qty > 0 and res in my_shop:
             gmax = global_buy.get(res, 1)
             local_price = my_shop[res]['buy']
-            if local_price >= gmax * SELL_THRESHOLD:
+            if local_price >= gmax * 0.75:
                 sells[res] = qty
                 coin += qty * local_price
 
     if not neighbors:
         return {'resources_to_sell_to_shop': sells, 'resources_to_buy_from_shop': {}, 'move': pos}
 
-    def score_edge(from_pos, to_pos):
-        """Score arbitrage: buy at from, sell at to. No quantity cap."""
-        from_shop = world[from_pos]['resources']
-        to_shop = world[to_pos]['resources']
-        score = 0
-
-        for res, info in from_shop.items():
-            qty, price = info['quantity'], info['sell']
-            if qty > 0 and price > 0:
-                to_info = to_shop.get(res)
-                if to_info and to_info['buy'] > price:
-                    score += (to_info['buy'] - price) * qty
-
-        return score
-
-    # 2-step lookahead with ALL neighbors
+    # 2-step lookahead with inlined scoring
     best_n1 = None
     best_score = -1
 
     for n1 in neighbors:
-        s1 = score_edge(pos, n1)
+        n1_node = world[n1]
+        n1_shop = n1_node['resources']
 
-        n1_neighbors = list(world[n1]['neighbours'].keys())
-        s2 = max((score_edge(n1, n2) for n2 in n1_neighbors), default=0)
+        # Inlined score pos -> n1
+        s1 = 0
+        for res, info in my_shop.items():
+            qty = info['quantity']
+            price = info['sell']
+            if qty > 0 and price > 0:
+                to_info = n1_shop.get(res)
+                if to_info:
+                    buy_price = to_info['buy']
+                    if buy_price > price:
+                        s1 += (buy_price - price) * qty
 
-        total = s1 + s2 * 0.9
+        # Inlined score n1 -> n2
+        s2_best = 0
+        for n2 in n1_node['neighbours'].keys():
+            n2_shop = world[n2]['resources']
+            s2 = 0
+            for res, info in n1_shop.items():
+                qty = info['quantity']
+                price = info['sell']
+                if qty > 0 and price > 0:
+                    to_info = n2_shop.get(res)
+                    if to_info:
+                        buy_price = to_info['buy']
+                        if buy_price > price:
+                            s2 += (buy_price - price) * qty
+            if s2 > s2_best:
+                s2_best = s2
+
+        total = s1 + s2_best * 0.9
         if total > best_score:
             best_score = total
             best_n1 = n1
 
     if not best_n1:
-        best_n1 = _r(neighbors)
+        best_n1 = random.choice(neighbors)
 
-    # Buy profitable resources (based on immediate neighbor, not global)
-    trades = []
+    # Buy profitable resources
     next_shop = world[best_n1]['resources']
-
+    trades = []
     for res, info in my_shop.items():
         qty, price = info['quantity'], info['sell']
         if qty > 0 and price > 0:
@@ -132,7 +125,6 @@ def agent(ws, *a, **k):
     trades.sort(reverse=True)
     buys = {}
     budget = coin
-
     for ratio, res, price, qty in trades:
         if budget <= 0:
             break
