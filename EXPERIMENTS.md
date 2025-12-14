@@ -32,12 +32,10 @@ When looking for new optimizations, ask:
 
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| zen | $117 | 0.0017ms | 70,260 | ultra-fast |
-| zen_3 | $241 | 0.0020ms | 118,097 | |
-| zen_4 | $475 | 0.0025ms | 192,555 | |
-| zen_5 | $838 | 0.0029ms | 284,655 | |
-| zen_6 | $953 | 0.0033ms | 284,558 | |
-| zen_8 | $1,625 | 0.0044ms | 365,620 | |
+| zen | $117 | 0.0016ms | 72,273 | ultra-fast |
+| zen_3 | $235 | 0.0020ms | 118,708 | |
+| **simple_random** | **$1,417** | **0.0021ms** | **664,687** | **dominates zen_4,5,6** |
+| zen_8 | $1,598 | 0.0042ms | 379,546 | |
 | zen_all | $2,710 | 0.0074ms | 363,860 | |
 | blitz | $3,622 | 0.0082ms | 439,690 | fast |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
@@ -48,7 +46,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
 | **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 25 (cash-adaptive thresholds)*
+*Updated after Iteration 26 (simple_random agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -660,6 +658,31 @@ Dynamic thresholds based on cash on hand.
 Improvement: +$188/round (+2.7%), same speed.
 
 **Key Insight:** Being pickier when rich (98% vs 95%) is more valuable than being looser when poor.
+
+---
+
+## Iteration 26: Simple Random Agent (FRONTIER SUCCESS)
+
+Fresh approach: What if we abandon lookahead entirely?
+
+**Agent design:**
+- Movement: Pure random (no scoring)
+- Selling: Everything
+- Buying: All profitable items, sorted by ratio
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| zen_3 | $235 | 0.0020ms | 118,708 |
+| **simple_random** | **$1,417** | **0.0021ms** | **664,687** |
+| zen_4 | $439 | 0.0024ms | 185,021 |
+
+**Pareto Analysis:**
+- Dominates zen_4, zen_5, zen_6
+- On frontier between zen_3 and zen_8
+
+**Key Insight:** Random exploration + greedy trading outperforms careful neighbor selection in the ultra-fast tier. The complexity of scoring neighbors costs more time than it saves in quality.
 
 ---
 

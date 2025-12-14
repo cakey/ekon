@@ -4,6 +4,7 @@
 
 from . import zen
 from . import zen_variants
+from . import simple_random
 from . import blitz
 from . import champion_v1
 from . import champion_v3
@@ -16,12 +17,13 @@ from . import adaptive
 
 agents = {
     # Ultra-fast tier (0.001-0.005ms)
-    "zen": zen.agent,                       # $117/r @ 0.0017ms
-    "zen_3": zen_variants.zen_3,            # $241/r @ 0.0020ms
-    "zen_4": zen_variants.zen_4,            # $475/r @ 0.0025ms
-    "zen_5": zen_variants.zen_5,            # $838/r @ 0.0029ms
-    "zen_6": zen_variants.zen_6,            # $953/r @ 0.0033ms
-    "zen_8": zen_variants.zen_8,            # $1,625/r @ 0.0044ms
+    "zen": zen.agent,                       # $117/r @ 0.0016ms
+    "zen_3": zen_variants.zen_3,            # $235/r @ 0.0020ms
+    "simple_random": simple_random.agent,   # $1,417/r @ 0.0021ms (dominates zen_4,5,6)
+    "zen_4": zen_variants.zen_4,            # $439/r @ 0.0024ms (dominated by simple_random)
+    "zen_5": zen_variants.zen_5,            # $785/r @ 0.0029ms (dominated by simple_random)
+    "zen_6": zen_variants.zen_6,            # $1,069/r @ 0.0032ms (dominated by simple_random)
+    "zen_8": zen_variants.zen_8,            # $1,598/r @ 0.0042ms
 
     # Fast tier (0.005-0.01ms)
     "zen_all": zen_variants.zen_all,        # $2,710/r @ 0.0074ms
