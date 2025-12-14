@@ -12,6 +12,8 @@ from . import global_arb_fast
 from . import global_arb_turbo
 from . import global_arb_plus
 from . import backtrack_fast
+from . import backtrack_turbo
+from . import gap_filler
 from . import depth2_global
 from . import depth2_global_top4
 from . import depth2_global_all
@@ -33,7 +35,8 @@ agents = {
     # Ultra-fast tier (0.001-0.005ms)
     "zen": zen.agent,                       # $117/r @ 0.0016ms
     "zen_3": zen_variants.zen_3,            # $235/r @ 0.0020ms (DOMINATED by global_arb_turbo)
-    "global_arb_turbo": global_arb_turbo.agent,  # $1,678/r @ 0.0019ms (15x zen, DOMINATES zen_3!)
+    "global_arb_turbo": global_arb_turbo.agent,  # $1,715/r @ 0.0019ms (DOMINATED by backtrack_turbo)
+    "backtrack_turbo": backtrack_turbo.agent,    # $2,575/r @ 0.0025ms (DOMINATES global_arb_turbo!)
     "global_arb_fast": global_arb_fast.agent,  # $3,849/r @ 0.0026ms (fixed thresholds)
     "global_arb": global_arb.agent,         # $4,050/r @ 0.0030ms (DOMINATES simple_global, zen_all, blitz, blitz_nas)
     "global_arb_plus": global_arb_plus.agent,  # $4,218/r @ 0.0036ms (DOMINATED by backtrack_fast)
@@ -52,7 +55,8 @@ agents = {
     "blitz_nas": champion_v5_blitz.agent,   # $3,774/r @ 0.0084ms (dominated by global_arb)
 
     # Balanced tier (0.01-0.1ms) - hybrid_champion DOMINATES depth2 family
-    "hybrid_edge": hybrid_edge.agent,           # $4,640/r @ 0.0100ms (fills gap: global_arb+ → depth2)
+    "hybrid_edge": hybrid_edge.agent,           # $4,631/r @ 0.0091ms (DOMINATED by gap_filler)
+    "gap_filler": gap_filler.agent,             # $5,216/r @ 0.0106ms (DOMINATES hybrid_edge!)
     "hybrid_champion": hybrid_champion.agent,   # $9,888/r @ 0.0191ms (DOMINATED by max_profit)
     "max_profit": max_profit.agent,             # $10,116/r @ 0.0172ms (DOMINATED by ultimate)
     "ultimate": ultimate.agent,                 # $11,065/r @ 0.0163ms (NEW MAX PROFIT! DOMINATES max_profit)

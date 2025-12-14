@@ -217,12 +217,11 @@ See EXPERIMENTS.md for full methodology.
         # Run key frontier agents (the actual Pareto frontier)
         variants = [
             (agent_registry.agents["zen"], "zen"),                    # ultra-fast
-            (agent_registry.agents["global_arb_turbo"], "global_arb_turbo"),  # 15x zen, dominates zen_3!
-            (agent_registry.agents["global_arb_fast"], "global_arb_fast"),  # fills gap
+            (agent_registry.agents["global_arb_turbo"], "global_arb_turbo"),  # fast tier
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
             (agent_registry.agents["backtrack_fast"], "backtrack_fast"),  # DOMINATES global_arb_plus!
-            (agent_registry.agents["hybrid_edge"], "hybrid_edge"),    # fills gap
-            (agent_registry.agents["ultimate"], "ultimate"),  # NEW MAX PROFIT! Dominates max_profit
+            (agent_registry.agents["gap_filler"], "gap_filler"),      # DOMINATES hybrid_edge!
+            (agent_registry.agents["ultimate"], "ultimate"),  # MAX PROFIT
         ]
         print(f"Running {len(variants)} frontier agents (use --all for all agents)...\n")
 
