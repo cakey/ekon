@@ -13,12 +13,20 @@ When testing a new agent, compare against **all frontier agents**, not just the 
 **Current Frontier Agents:**
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| blitz+nas | $3,748 | 0.007ms | 535,429 | fastest |
-| v1 | $5,023 | 0.052ms | 96,596 | balanced-fast |
-| v2+nas | $6,668 | 0.087ms | 76,644 | balanced (BEST) |
-| v3 | $6,823 | 0.168ms | 40,613 | max profit |
+| zen | $117 | 0.0017ms | 70,260 | ultra-fast |
+| zen_3 | $241 | 0.0020ms | 118,097 | |
+| zen_4 | $475 | 0.0025ms | 192,555 | |
+| zen_5 | $838 | 0.0029ms | 284,655 | |
+| zen_6 | $953 | 0.0033ms | 284,558 | |
+| zen_8 | $1,625 | 0.0044ms | 365,620 | |
+| zen_all | $2,710 | 0.0074ms | 363,860 | |
+| blitz | $3,622 | 0.0082ms | 439,690 | fast |
+| champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | fast+ |
+| champion_v1 | $5,093 | 0.0549ms | 92,846 | balanced-fast |
+| champion_v5 | $6,668 | 0.0936ms | 71,237 | balanced (BEST) |
+| champion_v3 | $6,818 | 0.1765ms | 38,626 | max profit |
 
-*Updated after Iteration 5: blitz+nas replaces blitz, v2+nas dominates v2*
+*Updated after Iteration 7: zen variants fill the zen→blitz gap*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -33,27 +41,42 @@ When testing a new agent, compare against **all frontier agents**, not just the 
 
 1. **Identify target**: Which part of the frontier are we trying to improve?
    - More profit than v3? (push right)
-   - Faster than blitz? (push left)
+   - Faster than zen? (push left)
    - Better efficiency in the middle? (push up)
 
-2. **Form hypothesis**: What change might achieve this?
+2. **Brainstorm ideas**: Generate multiple candidate ideas by asking:
+   - What information is available but unused?
+   - What do successful agents do that others don't?
+   - Can we combine strengths from different agents?
+   - What's the bottleneck in current agents? (compute? information? strategy?)
+   - What assumptions are we making that might be wrong?
+   - Look at "Ideas Not Yet Tested" section for inspiration
 
-3. **Test idea against EACH frontier agent**: Don't just test one variant - apply the idea incrementally to each frontier agent:
+3. **Form hypothesis**: Pick one idea and predict:
+   - Which agents will it help? Why?
+   - Which agents will it hurt? Why?
+   - What's the expected tradeoff (speed vs profit)?
+
+4. **Test idea against EACH frontier agent**: Apply the idea to each frontier agent:
+   - zen + idea
    - blitz + idea
-   - v1 + idea
-   - v2 + idea
-   - v3 + idea
+   - champion_v5_blitz + idea
+   - champion_v1 + idea
+   - champion_v5 + idea
+   - champion_v3 + idea
 
-4. **Analyze results across all variants**:
+5. **Analyze results across all variants**:
    - Did the idea help all agents? Some? None?
    - WHY did it help/hurt in each case?
-   - This builds understanding of what the idea actually does
+   - Compare predictions from step 3 to actual results
 
-5. **Evaluate position**:
+6. **Evaluate position**:
    - On frontier? → New valid option
    - Dominated? → Discard, document why it failed
 
-6. **Update frontier**: Add successful agents, remove any now-dominated agents
+7. **Update frontier**: Add successful agents, remove any now-dominated agents
+
+8. **Reflect on meta-process**: What did we learn about how to experiment better?
 
 ### Why Test Against Each Frontier Agent?
 
@@ -382,6 +405,69 @@ Tested on ALL frontier agents per methodology:
 
 ---
 
+## Iteration 6: Ultra-Fast Agent (Dominate matt_shitty_agent)
+
+**Problem:** matt_shitty_agent was on the Pareto frontier because it was the fastest agent, even though it lost money (-$49/r @ 0.0017ms). It's on the frontier because no other agent was both faster AND more profitable.
+
+**Solution:** Create an agent faster than matt while still making profit.
+
+**zen agent approach:**
+- Sell everything we're holding (instant profit from carried items)
+- Check first 2 neighbors for arbitrage opportunities
+- Buy profitable items, move to best neighbor
+- No sorting, no global scans, minimal computation
+
+| Agent | $/round | ms/round | Result |
+|-------|---------|----------|--------|
+| matt_shitty_agent | -$49 | 0.0017ms | baseline |
+| zen (2 neighbors) | +$117 | 0.0017ms | **DOMINATES matt** |
+
+**Learning:** Even minimal arbitrage (2 neighbors, no optimization) beats random buying. Zen proves you can be profitable at any speed - the question is how much profit.
+
+---
+
+## Iteration 7: Fill the Zen→Blitz Gap
+
+**Observation:** Huge gap between zen ($117/r @ 0.0017ms) and blitz ($3,622/r @ 0.0082ms). This is 4.8x slower for 31x more profit. What's in between?
+
+**Hypothesis:** zen checks 2 neighbors, blitz checks ALL neighbors. Testing 3-8 neighbors should fill the gap proportionally.
+
+**Created:** `agents/experimental_v6.py` with zen variants (factory pattern)
+
+| Variant | Neighbors | $/round | ms/round | Efficiency |
+|---------|-----------|---------|----------|------------|
+| zen | 2 | $117 | 0.0017ms | 70,260 |
+| zen_3 | 3 | $241 | 0.0020ms | 118,097 |
+| zen_4 | 4 | $475 | 0.0025ms | 192,555 |
+| zen_5 | 5 | $838 | 0.0029ms | 284,655 |
+| zen_6 | 6 | $953 | 0.0033ms | 284,558 |
+| zen_8 | 8 | $1,625 | 0.0044ms | 365,620 |
+| zen_all | all | $2,710 | 0.0074ms | 363,860 |
+| blitz | all | $3,622 | 0.0082ms | 439,690 |
+
+**Results:**
+- ALL zen variants are on the Pareto frontier!
+- Efficiency peaks around zen_5/zen_6 (~284k) then increases again at zen_8/zen_all (~365k)
+- Diminishing returns: zen_5 to zen_6 adds only $115/r for 0.0004ms
+- Best efficiency jump: zen_4 to zen_5 nearly doubles profit for 16% more time
+
+**Why does blitz beat zen_all?**
+- Both check ALL neighbors
+- Blitz has additional optimizations: local variable caching, pre-computed shop data
+- zen_all is "naive all neighbors" - room for optimization
+
+**Key Learning:** The relationship between neighbor count and profit is non-linear:
+- 2→3 neighbors: +$124/r (+106%)
+- 3→4 neighbors: +$234/r (+97%)
+- 4→5 neighbors: +$363/r (+76%)
+- 5→6 neighbors: +$115/r (+14%) ← diminishing returns start
+- 6→8 neighbors: +$672/r (+71%) ← but more neighbors still helps
+- 8→all: +$1,085/r (+67%)
+
+**Frontier Impact:** Expanded from 6 agents to 12 agents. The gap is now filled with smooth profit/speed tradeoff options.
+
+---
+
 ## Ideas Not Yet Tested
 
 - [x] ~~Multi-hop carrying~~ → Partially works! Sell threshold helps, but global buying still broken
@@ -390,12 +476,16 @@ Tested on ALL frontier agents per methodology:
 - [x] ~~Alternative scoring~~ → Standard margin×qty is correct
 - [x] ~~Tune adaptive threshold~~ → 4000 is optimal (tested 1000-10000)
 - [x] ~~Neighbor-aware selling~~ → Helps blitz/v2, hurts v1, conflicts with v3
+- [x] ~~Zen variants (neighbor count)~~ → All variants on frontier, fills zen→blitz gap
 - [ ] Resource memory (track purchase price, ensure profit on sale)
 - [ ] Opponent modeling (avoid nodes where others are heading)
 - [ ] Price prediction (resources get depleted, prices might change)
 - [ ] Path caching (precompute common routes)
 - [ ] Fix v1's limited vision (remove caps?) to enable NAS
 - [ ] Combine v3's global threshold WITH NAS?
+- [ ] Optimize zen_all to match blitz performance (why is blitz faster?)
+- [ ] Add NAS to zen variants (might boost profit without speed cost)
+- [ ] Hybrid: zen speed with depth-2 scoring (score without full lookahead?)
 
 ---
 
@@ -454,9 +544,27 @@ After each iteration, reflect on the experimental process itself.
    - Agent architecture can't exploit the idea
    - Idea is just wrong
 
+### What Worked Well (Iteration 7)
+
+1. **Systematic parameter sweep** revealed non-linear relationship between neighbor count and profit. Without testing 3,4,5,6,8,all we'd miss that diminishing returns kick in around 5-6 neighbors.
+
+2. **Factory pattern** in experimental_v6.py made it easy to create and test multiple variants with one code change.
+
+3. **Comparing zen_all vs blitz** revealed that code optimization matters - both check all neighbors but blitz is faster. This opens new optimization avenue.
+
 ### Next Iteration Focus
 
-Based on Iteration 5 learnings:
-- v1 failed because its limited vision (top-4, qty cap) can't handle carrying items
-- **Hypothesis**: Remove v1's caps → might enable NAS benefit
-- **Or**: Different idea that works WITH limited vision, not against it
+**Option A: Optimize zen_all to match blitz**
+- zen_all: $2,710/r @ 0.0074ms
+- blitz: $3,622/r @ 0.0082ms
+- Both check all neighbors, but blitz is 11% slower yet makes 34% more profit
+- Investigate: what does blitz do differently?
+
+**Option B: Add NAS to zen variants**
+- NAS helped blitz (+$212) and v2 (+$428) with negligible time cost
+- Zen variants have same "check all neighbors" structure as blitz
+- Hypothesis: NAS could boost zen variants similarly
+
+**Option C: Close the blitz→v1 gap**
+- Current gap: blitz ($3,774) → v1 ($5,093) is $1,319 profit jump for 6.5x slower
+- Is there something between them?
