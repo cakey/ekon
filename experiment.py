@@ -220,7 +220,7 @@ See EXPERIMENTS.md for full methodology.
             (agent_registry.agents["global_arb_turbo"], "global_arb_turbo"),  # 15x zen, dominates zen_3!
             (agent_registry.agents["global_arb_fast"], "global_arb_fast"),  # fills gap
             (agent_registry.agents["global_arb"], "global_arb"),      # fast, dominates blitz
-            (agent_registry.agents["global_arb_plus"], "global_arb+"), # fast+
+            (agent_registry.agents["backtrack_fast"], "backtrack_fast"),  # DOMINATES global_arb_plus!
             (agent_registry.agents["hybrid_edge"], "hybrid_edge"),    # fills gap
             (agent_registry.agents["hybrid_champion"], "hybrid_champion"),  # MAX PROFIT!
         ]

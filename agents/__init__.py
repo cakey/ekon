@@ -11,6 +11,7 @@ from . import global_arb
 from . import global_arb_fast
 from . import global_arb_turbo
 from . import global_arb_plus
+from . import backtrack_fast
 from . import depth2_global
 from . import depth2_global_top4
 from . import depth2_global_all
@@ -33,7 +34,8 @@ agents = {
     "global_arb_turbo": global_arb_turbo.agent,  # $1,678/r @ 0.0019ms (15x zen, DOMINATES zen_3!)
     "global_arb_fast": global_arb_fast.agent,  # $3,849/r @ 0.0026ms (fixed thresholds)
     "global_arb": global_arb.agent,         # $4,050/r @ 0.0030ms (DOMINATES simple_global, zen_all, blitz, blitz_nas)
-    "global_arb_plus": global_arb_plus.agent,  # $4,230/r @ 0.0035ms (global_arb + 1-node leftover)
+    "global_arb_plus": global_arb_plus.agent,  # $4,218/r @ 0.0036ms (DOMINATED by backtrack_fast)
+    "backtrack_fast": backtrack_fast.agent,   # $4,321/r @ 0.0034ms (DOMINATES global_arb_plus!)
     "simple_global": simple_global.agent,   # $2,011/r @ 0.0029ms (dominated by global_arb)
     "simple_random": simple_random.agent,   # $1,400/r @ 0.0040ms (dominated)
     "zen_4": zen_variants.zen_4,            # $439/r @ 0.0024ms (dominated)

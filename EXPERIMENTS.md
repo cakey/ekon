@@ -46,7 +46,8 @@ When looking for new optimizations, ask:
 | **global_arb_turbo** | **$2,053** | **0.0022ms** | **928,617** | **20x zen! Rotation, DOMINATES zen_3** |
 | **global_arb_fast** | **$3,912** | **0.0024ms** | **1,661,561** | **Fixed thresholds** |
 | **global_arb** | **$3,969** | **0.0028ms** | **1,416,904** | **DOMINATES simple_global, zen_all, blitz** |
-| **global_arb_plus** | **$4,161** | **0.0034ms** | **1,234,050** | **global_arb + 1-node leftover** |
+| ~~global_arb_plus~~ | $4,218 | 0.0036ms | 1,184,633 | dominated by backtrack_fast |
+| **backtrack_fast** | **$4,321** | **0.0034ms** | **1,279,276** | **DOMINATES global_arb_plus! Backtrack avoidance** |
 | **hybrid_edge** | **$4,534** | **0.0109ms** | **414,632** | **Fills gap: global_arb+ → hybrid_champion** |
 | **hybrid_champion** | **$8,812** | **0.0174ms** | **505,921** | **MAX PROFIT! DOMINATES depth2 family** |
 | zen_3 | $225 | 0.0020ms | 113,842 | dominated by global_arb_turbo |
@@ -58,7 +59,7 @@ When looking for new optimizations, ask:
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 
-*Updated after Iteration 33c (global_arb_turbo - 20x zen, dominates zen_3)*
+*Updated after Iteration 34 (backtrack_fast - DOMINATES global_arb_plus)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -1079,6 +1080,65 @@ Goal: Even faster than global_arb_fast while maintaining significant profit over
 | global_arb_fast | $3,912 | 0.0024ms | 39x |
 
 zen_3 is now dominated by global_arb_turbo (same speed tier, 7x more profit).
+
+---
+
+## Iteration 34: Novel Research (backtrack_fast)
+
+Goal: Explore completely new strategies not yet tested.
+
+### What Was Tested
+
+1. **Backtrack avoidance**: Don't immediately return to previous node → SUCCESS!
+   - backtrack_fast: $4,321/r @ 0.0034ms
+   - DOMINATES global_arb_plus ($4,218/r @ 0.0036ms)
+
+2. **Spread-based movement**: Move toward high buy/sell spread neighbors → FAILS
+   - -$23/r (loses money)
+   - Deterministic "optimal" movement fails
+
+3. **Resource specialization**: Focus on top 2 resources by spread → WORSE
+   - $1,593/r @ 0.0033ms (worse than global_arb_turbo)
+   - Limiting resources hurts opportunities
+
+4. **Second-order pricing**: Consider neighbor prices in buy decisions → NO BENEFIT
+   - $3,467/r @ 0.0083ms (slower, less profit than global_arb)
+
+5. **Momentum**: Continue in profitable direction → EQUIVALENT
+   - Same as backtrack avoidance, no additional benefit
+
+6. **Liquidity hunting**: Move toward high-quantity shops → FAILS
+   - -$7/r (loses money)
+   - Greedy movement doesn't work
+
+### Key Insight
+
+**Backtrack avoidance improves exploration**: By never immediately returning to the
+previous node, the agent is forced to explore new areas, increasing chances of finding
+arbitrage opportunities.
+
+This is the same principle that makes random movement essential for global_arb -
+but backtrack avoidance is slightly better because it guarantees forward progress
+while random movement can sometimes backtrack.
+
+### New Frontier Agent
+
+**backtrack_fast**: $4,321/r @ 0.0034ms
+- Backtrack avoidance + fixed thresholds (78/82)
+- **DOMINATES global_arb_plus** (more profit AND faster)
+- Fills gap between global_arb and hybrid_edge
+
+### Learnings
+
+1. **Movement matters more than we thought**: The difference between random movement
+   and backtrack-avoidance movement is significant (~$100/r).
+
+2. **"Optimal" deterministic movement FAILS**: Both spread_movement and liquidity_hunter
+   lose money. The graph is too complex for greedy local decisions.
+
+3. **Randomness is essential**: Some randomness in movement is necessary to avoid
+   getting stuck in local patterns. Backtrack avoidance preserves this while
+   guaranteeing forward progress.
 
 ---
 
