@@ -38,8 +38,8 @@ def agent(world_state, *args, **kwargs):
   my_node       = world_state['world'][my_position]
   my_neighbours = my_node['neighbours']
 
-  # Sell everything, if you can
-  sell = world_state['you']['resources']
+  # Sell everything the shop will buy
+  sell = {r: q for r, q in world_state['you']['resources'].items() if r in my_node['resources'] and q > 0}
 
   buy_tuple = (my_position, 0, {})
 

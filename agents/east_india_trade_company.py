@@ -85,7 +85,9 @@ def agent(world_state, *args, **kwargs):
         destination = lowestGoldNode
 
     if utils.is_last_round(world_state):
-        sells[ITEM] = world_state['you']['resources'][ITEM]
+        gold_qty = world_state['you']['resources'].get(ITEM, 0)
+        if gold_qty > 0 and ITEM in currentNode['resources']:
+            sells[ITEM] = gold_qty
 
     return {
         'resources_to_sell_to_shop':     sells,

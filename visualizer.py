@@ -11,6 +11,13 @@ from collections import deque, defaultdict
 STARTING_COIN = 10000  # Must match sim.py
 
 
+def calc_efficiency(ppr, tpr_ms):
+    """Calculate efficiency: profit per round per ms of CPU time."""
+    if tpr_ms <= 0.001:  # Avoid division by zero
+        return ppr * 1000  # Treat as 0.001ms
+    return ppr / tpr_ms
+
+
 class SimStats:
     """Track aggregate statistics across multiple simulation runs."""
 
@@ -20,25 +27,35 @@ class SimStats:
         self.total_coins = defaultdict(int)
         self.total_profit_per_round = defaultdict(float)
         self.total_time_per_round = defaultdict(float)  # in ms
+        self.total_efficiency = defaultdict(float)
 
     def record_run(self, agents, total_rounds):
         """Record results from a completed simulation."""
         self.runs += 1
-        sorted_agents = sorted(agents, key=lambda a: a['coin'], reverse=True)
+
+        # Calculate efficiency for each agent and sort by it
+        agents_with_eff = []
+        for agent in agents:
+            profit = agent['coin'] - STARTING_COIN
+            ppr = profit / total_rounds if total_rounds > 0 else 0
+            tpr_ms = (agent['time'] / total_rounds * 1000) if total_rounds > 0 else 0
+            eff = calc_efficiency(ppr, tpr_ms)
+            agents_with_eff.append((agent, eff, ppr, tpr_ms))
+
+        # Winner is determined by efficiency ($/round/ms)
+        sorted_agents = sorted(agents_with_eff, key=lambda x: x[1], reverse=True)
 
         # Record winner
         if sorted_agents:
-            self.wins[sorted_agents[0]['name']] += 1
+            self.wins[sorted_agents[0][0]['name']] += 1
 
         # Record stats for each agent
-        for agent in agents:
+        for agent, eff, ppr, tpr_ms in agents_with_eff:
             name = agent['name']
             self.total_coins[name] += agent['coin']
-            profit = agent['coin'] - STARTING_COIN
-            self.total_profit_per_round[name] += profit / total_rounds
-            # Time per round in ms
-            tpr_ms = (agent['time'] / total_rounds * 1000) if total_rounds > 0 else 0
+            self.total_profit_per_round[name] += ppr
             self.total_time_per_round[name] += tpr_ms
+            self.total_efficiency[name] += eff
 
     def get_avg_coin(self, name):
         return self.total_coins[name] / self.runs if self.runs else 0
@@ -48,6 +65,9 @@ class SimStats:
 
     def get_avg_tpr(self, name):
         return self.total_time_per_round[name] / self.runs if self.runs else 0
+
+    def get_avg_efficiency(self, name):
+        return self.total_efficiency[name] / self.runs if self.runs else 0
 
     def get_win_rate(self, name):
         return self.wins[name] / self.runs if self.runs else 0
@@ -86,18 +106,21 @@ class GameVisualizer:
 
     def update_state(self, round_num, total_rounds, agents, world_shops):
         with self.lock:
-            # Calculate time per round for each agent
-            agents_with_tpr = []
+            # Calculate metrics for each agent
+            agents_with_metrics = []
             for agent in agents:
                 a = dict(agent)
                 rounds = round_num + 1
                 a['time_per_round'] = (agent['time'] / rounds * 1000) if rounds > 0 else 0  # ms
-                agents_with_tpr.append(a)
+                profit = agent['coin'] - STARTING_COIN
+                a['profit_per_round'] = profit / rounds if rounds > 0 else 0
+                a['efficiency'] = calc_efficiency(a['profit_per_round'], a['time_per_round'])
+                agents_with_metrics.append(a)
 
             self.current_state = {
                 'round': round_num,
                 'total_rounds': total_rounds,
-                'agents': sorted(agents_with_tpr, key=lambda a: a['coin'], reverse=True),
+                'agents': sorted(agents_with_metrics, key=lambda a: a['efficiency'], reverse=True),
             }
 
     def record_results(self, agents, total_rounds):
@@ -166,59 +189,66 @@ class GameVisualizer:
         self._put(0, 0, "=" * max_x, curses.A_BOLD)
         self._put(0, 2, title, curses.A_BOLD | curses.A_REVERSE)
 
-        # Leaderboard
-        self._put(2, 0, " LEADERBOARD", curses.A_BOLD | curses.A_UNDERLINE)
+        # Leaderboard (sorted by efficiency: $/round/ms)
+        # Header row
+        self._put(2, 0, " LEADERBOARD (by $/r/ms)", curses.A_BOLD | curses.A_UNDERLINE)
+        # Column headers
+        hdr = "     NAME                         EFF($/r/ms)         COIN      $/r      ms/r"
+        if stats.runs > 0:
+            hdr += "    WR"
+        self._put(3, 0, hdr, curses.A_DIM)
 
         if state and state['agents']:
-            rounds_played = state['round'] + 1
-            name_width = max(12, max_x - 65)
-
-            for i, agent in enumerate(state['agents'][:8]):
-                y = 3 + i
+            for i, agent in enumerate(state['agents'][:7]):
+                y = 4 + i
                 if y >= max_y - 10:
                     break
 
-                name = agent['name'][:name_width].ljust(name_width)
-                coin = f"${agent['coin']:>10,}"
-                ppr = (agent['coin'] - STARTING_COIN) / rounds_played
-                ppr_str = f"{ppr:>+7,.0f}/r"
+                name = agent['name'][:28].ljust(28)
+                coin = f"${agent['coin']:>12,}"
+                ppr = agent.get('profit_per_round', 0)
+                ppr_str = f"{ppr:>+8,.0f}"
                 tpr = agent.get('time_per_round', 0)
-                tpr_str = f"{tpr:>6.2f}ms"
+                tpr_str = f"{tpr:>8.2f}"
+                eff = agent.get('efficiency', 0)
+                eff_str = f"{eff:>12,.1f}"
 
                 # Show win rate if we have stats
                 if stats.runs > 0:
                     wr = stats.get_win_rate(agent['name']) * 100
-                    extra = f"  WR:{wr:>4.0f}%"
+                    extra = f"  {wr:>4.0f}%"
                 else:
                     extra = ""
 
-                line = f" {i+1}. {name} {coin}  {ppr_str}  {tpr_str}{extra}".ljust(max_x - 1)
+                line = f" {i+1}. {name} {eff_str} {coin} {ppr_str} {tpr_str}{extra}"
                 attr = curses.A_BOLD if i < 3 else 0
                 self._put(y, 0, line, attr)
 
         # Aggregate stats section (if we have runs)
-        stats_y = 12
+        stats_y = 13
         if stats.runs > 0 and stats_y < max_y - 8:
             self._hline(stats_y, max_x)
-            self._put(stats_y + 1, 0, f" AGGREGATE STATS ({stats.runs} runs)", curses.A_BOLD | curses.A_UNDERLINE)
+            self._put(stats_y + 1, 0, f" AGGREGATE ({stats.runs} runs)", curses.A_BOLD | curses.A_UNDERLINE)
+            # Column headers for aggregate
+            self._put(stats_y + 2, 0, "     NAME                         EFF($/r/ms)   WINS     WR%    AVG COIN      $/r      ms/r", curses.A_DIM)
 
-            # Show agents sorted by win rate
-            agents_by_wr = sorted(stats.wins.keys(), key=lambda n: stats.wins[n], reverse=True)
-            fixed_width = 55  # wins + coin + ppr + tpr
-            name_width = max(12, max_x - fixed_width - 4)
+            # Show agents sorted by average efficiency
+            all_agents = list(stats.total_efficiency.keys())
+            agents_by_eff = sorted(all_agents, key=lambda n: stats.get_avg_efficiency(n), reverse=True)
 
-            for i, name in enumerate(agents_by_wr[:5]):
-                y = stats_y + 2 + i
+            for i, name in enumerate(agents_by_eff[:5]):
+                y = stats_y + 3 + i
                 if y >= max_y - 6:
                     break
                 wr = stats.get_win_rate(name) * 100
                 avg_coin = stats.get_avg_coin(name)
                 avg_ppr = stats.get_avg_ppr(name)
                 avg_tpr = stats.get_avg_tpr(name)
-                display_name = name[:name_width].ljust(name_width)
-                line = f"   {display_name}  W:{stats.wins[name]:>3} ({wr:>4.0f}%)  ${avg_coin:>10,.0f}  {avg_ppr:>+6,.0f}/r  {avg_tpr:>5.2f}ms"
-                self._put(y, 0, line.ljust(max_x - 1))
-            log_start = stats_y + 2 + min(5, len(agents_by_wr)) + 1
+                avg_eff = stats.get_avg_efficiency(name)
+                display_name = name[:28].ljust(28)
+                line = f" {i+1}. {display_name} {avg_eff:>12,.1f}   {stats.wins[name]:>4}   {wr:>5.1f}% ${avg_coin:>12,.0f} {avg_ppr:>+8,.0f} {avg_tpr:>8.2f}"
+                self._put(y, 0, line)
+            log_start = stats_y + 3 + min(5, len(agents_by_eff)) + 1
         else:
             log_start = 12
 
