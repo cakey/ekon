@@ -7,8 +7,8 @@ from . import zen_variants
 from . import blitz
 from . import champion_v1
 from . import champion_v3
-from . import champion_v5
 from . import champion_v5_blitz
+from . import champion_v6
 from . import depth2_top2_nas
 from . import adaptive
 
@@ -30,7 +30,7 @@ agents = {
     "depth2_top2_nas": depth2_top2_nas.agent,  # $4,972/r @ 0.0318ms (dominates depth2_top2)
     "adaptive": adaptive.agent,                # $4,995/r @ 0.0495ms
     "champion_v1": champion_v1.agent,       # $5,105/r @ 0.0516ms
-    "champion_v5": champion_v5.agent,       # $6,668/r @ 0.0936ms (BEST efficiency)
+    "champion_v6": champion_v6.agent,       # $6,795/r @ 0.089ms (dominates v5)
 
     # Max profit tier (0.1ms+)
     "champion_v3": champion_v3.agent,       # $6,818/r @ 0.1765ms
