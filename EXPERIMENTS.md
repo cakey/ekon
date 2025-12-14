@@ -42,26 +42,22 @@ When looking for new optimizations, ask:
 
 | Agent | $/round | ms/round | Efficiency | Position |
 |-------|---------|----------|------------|----------|
-| zen | $117 | 0.0016ms | 72,273 | ultra-fast |
-| zen_3 | $235 | 0.0020ms | 118,708 | |
-| **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** | **DOMINATES simple_global, zen_all, blitz, blitz_nas** |
-| **global_arb_plus** | **$4,230** | **0.0035ms** | **1,203,340** | **global_arb + 1-node leftover** |
-| **depth2_global** | **$8,161** | **0.0245ms** | **333,304** | **DOMINATES ENTIRE balanced+max tier!** |
-| **depth2_global_top4** | **$8,398** | **0.0353ms** | **237,774** | **More neighbors = more profit** |
-| **depth2_global_all** | **$9,017** | **0.0834ms** | **108,131** | **MAX PROFIT frontier point** |
+| zen | $110 | 0.0015ms | 72,825 | ultra-fast |
+| zen_3 | $236 | 0.0019ms | 122,854 | |
+| **global_arb** | **$4,001** | **0.0024ms** | **1,671,975** | **DOMINATES simple_global, zen_all, blitz** |
+| **global_arb_plus** | **$4,230** | **0.0032ms** | **1,337,620** | **global_arb + 1-node leftover** |
+| **hybrid_edge** | **$4,640** | **0.0100ms** | **463,308** | **Fills gap: global_arb+ → hybrid_champion** |
+| **hybrid_champion** | **$10,222** | **0.0168ms** | **608,675** | **NEW MAX PROFIT! DOMINATES depth2 family** |
+| depth2_global | $8,189 | 0.0263ms | 311,684 | dominated by hybrid_champion |
+| depth2_global_top4 | $9,108 | 0.0379ms | 240,310 | dominated by hybrid_champion |
+| depth2_global_all | $9,621 | 0.0895ms | 107,506 | dominated by hybrid_champion |
 | simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
 | zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | dominated by global_arb |
-| depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominated by depth2_global |
-| adaptive | $4,995 | 0.0495ms | 100,909 | dominated by depth2_global |
-| champion_v1 | $5,082 | 0.0472ms | 107,567 | dominated by depth2_global |
-| champion_v6 | $6,775 | 0.073ms | 93,349 | dominated by depth2_global |
-| champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by depth2_global |
-| champion_v8 | $7,184 | 0.148ms | 48,541 | dominated by depth2_global |
 
-*Updated after Iteration 32 (depth2_global variants)*
+*Updated after Iteration 33 (hybrid_champion - new max profit)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -930,6 +926,68 @@ The original depth2_global uses top-2 neighbors at depth 2. Tested ALL neighbors
 1. **depth2_global** (updated): $8,161/r @ 0.0245ms - sell threshold 60%→90%
 2. **depth2_global_top4**: $8,398/r @ 0.0353ms - top-4 neighbors at depth 2
 3. **depth2_global_all**: $9,017/r @ 0.0834ms - ALL neighbors at depth 2 (MAX PROFIT)
+
+---
+
+## Iteration 33: Hybrid Movement (NEW MAX PROFIT CHAMPION!)
+
+Explored filling the gap between global_arb_plus ($4,230 @ 0.0032ms) and depth2_global ($8,189 @ 0.0263ms).
+
+### What Was Tested
+
+1. **depth1_global** - depth-1 lookahead + global arb: **WORSE** ($1,066/r)
+   - Depth-1 lookahead is actually harmful! Greedy movement misses global opportunities.
+
+2. **zen_global** - zen speed + global thresholds: Same as global_arb (it IS global_arb)
+
+3. **adaptive_depth_liquidity** - depth-2 when rich, depth-1 when poor: **DOMINATED**
+   - Same profit as depth2, but slower
+
+4. **global_arb_directed** - move toward best global opportunities: $4,871/r @ 0.0139ms
+   - Promising but not optimal
+
+5. **hybrid_movement** - edge scoring + global opportunity scoring: $5,137/r @ 0.0159ms
+   - Combined score = edge_score + 0.5 * global_score
+
+6. **hybrid + d2 sell thresh** - hybrid movement with depth2's buy/sell: **$10,222/r @ 0.0168ms**
+   - **DOMINATES ENTIRE DEPTH2 FAMILY!**
+
+### Key Insight: Movement vs Buy/Sell
+
+The breakthrough came from separating concerns:
+- **Movement:** Hybrid scoring (edge profit + global opportunity)
+- **Buy/Sell:** Depth2's strategy (priority buying + global arb leftover + 60%→90% sell threshold)
+
+Depth-1 and depth-2 lookahead for MOVEMENT hurts because it's too greedy. But depth2's BUY/SELL logic is excellent.
+
+### Weight Tuning
+
+| Weight Config | $/round | ms/round |
+|---------------|---------|----------|
+| edge only | $922 | 0.0145ms |
+| edge + 0.25*global | $4,317 | 0.0161ms |
+| **edge + 0.5*global** | **$5,130** | **0.0157ms** |
+| edge + 0.75*global | $4,177 | 0.0159ms |
+| edge + 1.0*global | $3,085 | 0.0158ms |
+
+0.5 weight is optimal.
+
+### New Frontier Agents Created
+
+1. **hybrid_edge**: $4,640/r @ 0.0100ms
+   - Pure edge scoring + depth2 buy/sell
+   - Fills gap between global_arb_plus and hybrid_champion
+
+2. **hybrid_champion**: $10,222/r @ 0.0168ms
+   - Hybrid movement (edge + 0.5*global) + depth2 buy/sell
+   - **NEW MAX PROFIT! DOMINATES depth2_global, top4, and all**
+
+### Pareto Dominance Analysis
+
+hybrid_champion DOMINATES:
+- depth2_global ($8,189 @ 0.0263ms): +25% profit, 1.6x faster
+- depth2_global_top4 ($9,108 @ 0.0379ms): +12% profit, 2.3x faster
+- depth2_global_all ($9,621 @ 0.0895ms): +6% profit, 5.3x faster
 
 ---
 
