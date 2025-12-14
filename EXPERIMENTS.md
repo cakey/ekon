@@ -35,6 +35,7 @@ When looking for new optimizations, ask:
 | zen | $117 | 0.0016ms | 72,273 | ultra-fast |
 | zen_3 | $235 | 0.0020ms | 118,708 | |
 | **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** | **DOMINATES simple_global, zen_all, blitz, blitz_nas** |
+| **global_arb_plus** | **$4,230** | **0.0035ms** | **1,203,340** | **global_arb + 1-node leftover** |
 | simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
 | zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
@@ -47,7 +48,7 @@ When looking for new optimizations, ask:
 | champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
 | **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
 
-*Updated after Iteration 29 (global_arb agent)*
+*Updated after Iteration 30 (global_arb_plus agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -798,6 +799,36 @@ Pure buy-low-sell-high based on global price ratios. No neighbor lookahead.
 5. Random movement is sufficient because you WILL encounter price variations
 
 **Key Insight:** The simplest strategy (buy cheap, sell expensive, move randomly) beats all the sophisticated neighbor-scoring approaches in the fast tier. Complexity was solving the wrong problem.
+
+---
+
+## Iteration 30: Global Arbitrage Plus (FRONTIER SUCCESS)
+
+Combine global arbitrage with 1-node profit opportunities using leftover cash.
+
+**Strategy:**
+1. Global arb buys first (buy cheap relative to global)
+2. With leftover cash, buy items profitable at immediate neighbor
+
+**Key insight:** Pure global arb sometimes leaves cash unused (nothing cheap enough). Using that leftover for immediate arbitrage captures additional value.
+
+**Cash-adaptive thresholds:**
+- Poor ($<500): buy at <=80% of global, sell at >=70% of global
+- Rich ($>10000): buy at <=75% of global, sell at >=85% of global
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| global_arb | $3,988 | 0.0028ms | 1,400,062 |
+| **global_arb_plus** | **$4,230** | **0.0035ms** | **1,203,340** |
+| depth2_top2_nas | $4,911 | 0.0292ms | 168,352 |
+
+**Pareto Analysis:**
+- +$242/r over global_arb for +0.0007ms
+- On frontier between global_arb and depth2_top2_nas
+
+**Failed experiment:** Combining with greedy movement (toward best neighbor) HURTS badly - greedy movement conflicts with global arb strategy. Random movement is essential.
 
 ---
 

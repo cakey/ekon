@@ -8,6 +8,7 @@ from . import simple_random
 from . import simple_global
 from . import hybrid_greedy
 from . import global_arb
+from . import global_arb_plus
 from . import blitz
 from . import champion_v1
 from . import champion_v3
@@ -23,6 +24,7 @@ agents = {
     "zen": zen.agent,                       # $117/r @ 0.0016ms
     "zen_3": zen_variants.zen_3,            # $235/r @ 0.0020ms
     "global_arb": global_arb.agent,         # $4,050/r @ 0.0030ms (DOMINATES simple_global, zen_all, blitz, blitz_nas)
+    "global_arb_plus": global_arb_plus.agent,  # $4,230/r @ 0.0035ms (global_arb + 1-node leftover)
     "simple_global": simple_global.agent,   # $2,011/r @ 0.0029ms (dominated by global_arb)
     "simple_random": simple_random.agent,   # $1,400/r @ 0.0040ms (dominated)
     "zen_4": zen_variants.zen_4,            # $439/r @ 0.0024ms (dominated)
