@@ -36,19 +36,20 @@ When looking for new optimizations, ask:
 | zen_3 | $235 | 0.0020ms | 118,708 | |
 | **global_arb** | **$4,050** | **0.0030ms** | **1,343,195** | **DOMINATES simple_global, zen_all, blitz, blitz_nas** |
 | **global_arb_plus** | **$4,230** | **0.0035ms** | **1,203,340** | **global_arb + 1-node leftover** |
+| **depth2_global** | **$7,577** | **0.0252ms** | **300,577** | **DOMINATES ENTIRE balanced+max tier!** |
 | simple_global | $2,011 | 0.0029ms | 689,137 | dominated by global_arb |
 | zen_all | $2,710 | 0.0074ms | 363,860 | dominated by global_arb |
 | hybrid_greedy | $2,761 | 0.0077ms | 358,634 | dominated by global_arb |
 | blitz | $3,622 | 0.0082ms | 439,690 | dominated by global_arb |
 | champion_v5_blitz | $3,774 | 0.0084ms | 449,332 | dominated by global_arb |
-| depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominates depth2_top2 |
-| adaptive | $4,995 | 0.0495ms | 100,909 | |
-| champion_v1 | $5,082 | 0.0472ms | 107,567 | balanced-fast |
-| champion_v6 | $6,775 | 0.073ms | 93,349 | balanced (dominates v5) |
-| champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by v8 |
-| **champion_v8** | **$7,184** | **0.148ms** | **48,541** | **max profit (dominates v7)** |
+| depth2_top2_nas | $4,972 | 0.0318ms | 156,352 | dominated by depth2_global |
+| adaptive | $4,995 | 0.0495ms | 100,909 | dominated by depth2_global |
+| champion_v1 | $5,082 | 0.0472ms | 107,567 | dominated by depth2_global |
+| champion_v6 | $6,775 | 0.073ms | 93,349 | dominated by depth2_global |
+| champion_v7 | $6,996 | 0.148ms | 47,320 | dominated by depth2_global |
+| champion_v8 | $7,184 | 0.148ms | 48,541 | dominated by depth2_global |
 
-*Updated after Iteration 30 (global_arb_plus agent)*
+*Updated after Iteration 31 (depth2_global agent)*
 
 **Validation Rules:**
 1. New agent beats at least one frontier agent on at least one metric
@@ -829,6 +830,45 @@ Combine global arbitrage with 1-node profit opportunities using leftover cash.
 - On frontier between global_arb and depth2_top2_nas
 
 **Failed experiment:** Combining with greedy movement (toward best neighbor) HURTS badly - greedy movement conflicts with global arb strategy. Random movement is essential.
+
+---
+
+## Iteration 31: Depth2 Global (FRONTIER SUCCESS - DOMINATES ALL)
+
+Combine depth-2 lookahead movement with global arbitrage buying.
+
+**Strategy:**
+1. Depth-2 lookahead for movement (find best immediate profit path)
+2. Buy items profitable at next node first
+3. With leftover cash, buy items cheap relative to global max (≤80%)
+4. Cash-adaptive sell threshold (65%→85% of global max)
+
+**Key insight:** Depth-2 lookahead finds great movement paths, but leaves cash unused. Using leftover for global arb buys captures additional statistical value.
+
+**Results:**
+
+| Agent | $/round | ms/round | Efficiency |
+|-------|---------|----------|------------|
+| global_arb_plus | $4,173 | 0.0036ms | 1,152,709 |
+| depth2_top2_nas | $4,906 | 0.0299ms | 164,041 |
+| champion_v6 | $6,774 | 0.0713ms | 95,028 |
+| champion_v8 | $7,156 | 0.1445ms | 49,530 |
+| **depth2_global** | **$7,577** | **0.0252ms** | **300,577** |
+
+**Pareto Analysis - DOMINATES:**
+- depth2_top2_nas (more profit, faster!)
+- adaptive (more profit, faster!)
+- champion_v1 (more profit, faster!)
+- champion_v6 (more profit, faster!)
+- champion_v8 (more profit, 6x faster!)
+
+**Why this works:**
+1. Depth-2 lookahead still valuable for finding immediate profit paths
+2. Leftover cash was being wasted - now captures global arb value
+3. Global sell threshold prevents selling too cheap
+4. Best of both worlds: tactical movement + statistical arbitrage
+
+**Key Insight:** The entire balanced and max-profit tiers are now obsolete. One agent dominates everything from depth2_top2_nas through champion_v8.
 
 ---
 
